@@ -2,6 +2,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using MINgo.Flight;
 using MINgo.Landing;
+using MINgo.World;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -34,31 +35,116 @@ namespace MINgo.EditorTools
             camera.clearFlags = CameraClearFlags.Skybox;
             camera.fieldOfView = 62f;
             camera.nearClipPlane = 0.05f;
-            camera.farClipPlane = 1800f;
+            camera.farClipPlane = 2600f;
             cameraObject.transform.position = new Vector3(0f, 18f, -38f);
             cameraObject.transform.rotation = Quaternion.Euler(18f, 0f, 0f);
 
             GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
             ground.name = "Flight Reference Ground";
             ground.transform.position = new Vector3(0f, -0.22f, 500f);
-            ground.transform.localScale = new Vector3(2000f, 0.08f, 2000f);
+            ground.transform.localScale = new Vector3(2200f, 0.08f, 2200f);
             ground.GetComponent<Renderer>().sharedMaterial = MakeMaterial("Flight_Reference_Ground_Mat", new Color(0.36f, 0.52f, 0.4f));
 
-            CreateLandingSurface("Runway", SurfaceKind.Runway, Vector3.zero, new Vector3(18f, 0.25f, 180f), new Color(0.19f, 0.2f, 0.2f));
-            CreateLandingSurface("Coastal Road", SurfaceKind.Road, new Vector3(70f, 0.02f, 230f), new Vector3(10f, 0.16f, 320f), new Color(0.12f, 0.13f, 0.14f));
-            CreateLandingSurface("Open Field", SurfaceKind.Field, new Vector3(-95f, 0.01f, 260f), new Vector3(120f, 0.14f, 130f), new Color(0.28f, 0.48f, 0.27f));
-            GameObject ridge = CreateLandingSurface("Ridge Landing Shelf", SurfaceKind.Ridge, new Vector3(-260f, 22f, 520f), new Vector3(95f, 0.3f, 46f), new Color(0.39f, 0.37f, 0.32f));
-            ridge.transform.rotation = Quaternion.Euler(0f, 8f, 12f);
-            CreateLandingSurface("Canyon Floor", SurfaceKind.CanyonFloor, new Vector3(250f, 0.03f, 610f), new Vector3(58f, 0.14f, 260f), new Color(0.46f, 0.34f, 0.24f));
-            GameObject ocean = CreateLandingSurface("Ocean", SurfaceKind.Water, new Vector3(610f, -0.05f, 520f), new Vector3(620f, 1f, 1400f), new Color(0.12f, 0.33f, 0.58f));
-            ocean.GetComponent<Collider>().isTrigger = true;
+            CreateAirport();
+            CreateCoastline();
+            CreateRoads();
+            CreateFields();
+            CreateCityEdge();
+            CreateMountainRidge();
+            CreateCanyonRoute();
 
             GameObject aircraft = CreateAircraft();
             var cameraRig = cameraObject.AddComponent<ChaseCameraRig>();
             cameraRig.target = aircraft.transform;
+            CreateWorldBounds(aircraft);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddSceneToBuildSettings(ScenePath);
+        }
+
+        private static void CreateAirport()
+        {
+            CreateLandingSurface("Runway", SurfaceKind.Runway, Vector3.zero, new Vector3(18f, 0.25f, 220f), new Color(0.19f, 0.2f, 0.2f));
+            CreateBlock("Runway Centerline", new Vector3(0f, 0.16f, 10f), new Vector3(1.2f, 0.03f, 170f), new Color(0.92f, 0.9f, 0.78f));
+            CreateBlock("Airport Apron", new Vector3(-34f, 0f, -40f), new Vector3(58f, 0.16f, 58f), new Color(0.25f, 0.26f, 0.25f));
+            CreateBlock("Hangar West", new Vector3(-72f, 6f, -70f), new Vector3(34f, 12f, 24f), new Color(0.48f, 0.52f, 0.54f));
+            CreateBlock("Hangar East", new Vector3(-70f, 5f, -20f), new Vector3(28f, 10f, 20f), new Color(0.42f, 0.47f, 0.5f));
+            CreateBlock("Control Tower", new Vector3(36f, 20f, -30f), new Vector3(8f, 40f, 8f), new Color(0.7f, 0.75f, 0.72f));
+        }
+
+        private static void CreateCoastline()
+        {
+            GameObject ocean = CreateLandingSurface("Ocean", SurfaceKind.Water, new Vector3(650f, -0.05f, 520f), new Vector3(680f, 1f, 1500f), new Color(0.12f, 0.33f, 0.58f));
+            ocean.GetComponent<Collider>().isTrigger = true;
+            CreateLandingSurface("Beach Emergency Strip", SurfaceKind.Field, new Vector3(310f, 0.03f, 330f), new Vector3(44f, 0.14f, 300f), new Color(0.76f, 0.68f, 0.48f));
+            CreateBlock("Beach Sand Band", new Vector3(355f, -0.01f, 520f), new Vector3(95f, 0.1f, 1120f), new Color(0.69f, 0.62f, 0.43f));
+        }
+
+        private static void CreateRoads()
+        {
+            CreateLandingSurface("Coastal Road", SurfaceKind.Road, new Vector3(210f, 0.04f, 360f), new Vector3(10f, 0.16f, 560f), new Color(0.12f, 0.13f, 0.14f));
+            GameObject airportRoad = CreateLandingSurface("Airport Service Road", SurfaceKind.Road, new Vector3(83f, 0.04f, 70f), new Vector3(12f, 0.16f, 230f), new Color(0.1f, 0.11f, 0.12f));
+            airportRoad.transform.rotation = Quaternion.Euler(0f, -22f, 0f);
+        }
+
+        private static void CreateFields()
+        {
+            CreateLandingSurface("Open Field", SurfaceKind.Field, new Vector3(-115f, 0.02f, 260f), new Vector3(150f, 0.14f, 150f), new Color(0.28f, 0.48f, 0.27f));
+            CreateLandingSurface("Long Meadow", SurfaceKind.Field, new Vector3(-220f, 0.02f, 165f), new Vector3(95f, 0.14f, 250f), new Color(0.34f, 0.55f, 0.3f));
+            CreateBlock("Field Tree Line", new Vector3(-40f, 5f, 360f), new Vector3(12f, 10f, 170f), new Color(0.14f, 0.28f, 0.15f));
+        }
+
+        private static void CreateCityEdge()
+        {
+            for (int row = 0; row < 5; row++)
+            {
+                for (int col = 0; col < 5; col++)
+                {
+                    float height = 10f + ((row * 3 + col * 5) % 20);
+                    Vector3 position = new Vector3(32f + col * 24f, height * 0.5f, 390f + row * 28f);
+                    Vector3 scale = new Vector3(14f + (col % 2) * 5f, height, 12f + (row % 2) * 6f);
+                    CreateBlock("City Edge Block " + row + "-" + col, position, scale, new Color(0.46f, 0.49f, 0.5f));
+                }
+            }
+
+            CreateBlock("City Edge Marker Tower", new Vector3(166f, 31f, 515f), new Vector3(14f, 62f, 14f), new Color(0.56f, 0.58f, 0.6f));
+        }
+
+        private static void CreateMountainRidge()
+        {
+            for (int i = 0; i < 7; i++)
+            {
+                GameObject ridgeBlock = CreateBlock(
+                    "Mountain Ridge Wall " + i,
+                    new Vector3(-420f + i * 58f, 45f + i % 3 * 7f, 650f + i * 28f),
+                    new Vector3(90f, 90f + i % 2 * 22f, 72f),
+                    new Color(0.36f, 0.34f, 0.31f));
+                ridgeBlock.transform.rotation = Quaternion.Euler(0f, 18f, -18f + i % 3 * 10f);
+            }
+
+            GameObject shelf = CreateLandingSurface("Ridge Landing Shelf", SurfaceKind.Ridge, new Vector3(-255f, 24f, 555f), new Vector3(105f, 0.3f, 48f), new Color(0.39f, 0.37f, 0.32f));
+            shelf.transform.rotation = Quaternion.Euler(0f, 8f, 12f);
+            CreateBlock("Restricted Airspace Placeholder Base", new Vector3(-470f, 38f, 790f), new Vector3(46f, 20f, 46f), new Color(0.28f, 0.3f, 0.32f));
+        }
+
+        private static void CreateCanyonRoute()
+        {
+            CreateLandingSurface("Canyon Floor", SurfaceKind.CanyonFloor, new Vector3(250f, 0.03f, 690f), new Vector3(58f, 0.14f, 330f), new Color(0.46f, 0.34f, 0.24f));
+            for (int i = 0; i < 6; i++)
+            {
+                CreateBlock("Canyon Left Wall " + i, new Vector3(198f, 28f, 555f + i * 58f), new Vector3(36f, 56f, 50f), new Color(0.42f, 0.31f, 0.23f));
+                CreateBlock("Canyon Right Wall " + i, new Vector3(302f, 31f, 555f + i * 58f), new Vector3(40f, 62f, 50f), new Color(0.39f, 0.29f, 0.22f));
+            }
+        }
+
+        private static void CreateWorldBounds(GameObject aircraft)
+        {
+            var boundsObject = new GameObject("World Bounds");
+            var bounds = boundsObject.AddComponent<WorldBounds>();
+            bounds.aircraft = aircraft.GetComponent<ArcadeAircraftController>();
+            bounds.waterFailureHeight = -2f;
+            bounds.resetPosition = new Vector3(0f, 2f, -65f);
+            bounds.resetEulerAngles = Vector3.zero;
         }
 
         private static GameObject CreateAircraft()
@@ -101,6 +187,16 @@ namespace MINgo.EditorTools
             surface.GetComponent<Renderer>().sharedMaterial = MakeMaterial(name.Replace(" ", "_") + "_Mat", color);
             surface.AddComponent<SurfaceTag>().kind = kind;
             return surface;
+        }
+
+        private static GameObject CreateBlock(string name, Vector3 position, Vector3 scale, Color color)
+        {
+            GameObject block = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            block.name = name;
+            block.transform.position = position;
+            block.transform.localScale = scale;
+            block.GetComponent<Renderer>().sharedMaterial = MakeMaterial(name.Replace(" ", "_") + "_Mat", color);
+            return block;
         }
 
         private static Material MakeMaterial(string name, Color color)

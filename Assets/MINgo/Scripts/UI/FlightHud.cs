@@ -30,7 +30,7 @@ namespace MINgo.UI
 
             SetText(speedText, "Speed " + FormatSpeed(aircraft.SpeedMetersPerSecond));
             SetText(altitudeText, "Altitude " + FormatAltitude(aircraft.AltitudeMeters));
-            SetText(stateText, "State " + aircraft.CurrentState);
+            SetText(stateText, "State " + aircraft.CurrentState + "  Throttle " + Mathf.RoundToInt(aircraft.Throttle01 * 100f) + "%");
 
             LandingContext currentContext = landing == null ? LandingContext.None : landing.LastContext;
             UpdateContext(currentContext, Time.deltaTime);
@@ -97,8 +97,13 @@ namespace MINgo.UI
             }
             else
             {
-                SetText(contextText, string.Empty);
+                SetText(contextText, FormatControlHint());
             }
+        }
+
+        public static string FormatControlHint()
+        {
+            return "W/S throttle  A/D turn  Up/Down pitch  Q/E roll  Space brake";
         }
 
         private void UpdateWarningText()

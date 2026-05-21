@@ -34,5 +34,15 @@ namespace MINgo.Tests
         {
             Assert.AreEqual(expected, FlightHud.FormatRestrictedWarning(phase));
         }
+
+        [Test]
+        public void FormatControlHint_DescribesEasyFlightControls()
+        {
+            string hint = FlightHud.FormatControlHint();
+
+            Assert.That(hint, Does.Contain("W/S"));
+            Assert.That(hint, Does.Contain("A/D"));
+            Assert.That(hint, Does.Contain("Q/E"));
+        }
     }
 }

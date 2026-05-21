@@ -59,6 +59,18 @@ namespace MINgo.EditorTools
             GameObject aircraft = CreateAircraft();
             var cameraRig = cameraObject.AddComponent<ChaseCameraRig>();
             cameraRig.target = aircraft.transform;
+            cameraRig.followDistance = 13.5f;
+            cameraRig.followHeight = 3.2f;
+            cameraRig.lookAhead = 20f;
+            cameraRig.lookHeight = 0.4f;
+            cameraRig.pitchFollow = 0.28f;
+            cameraRig.speedPullback = 4f;
+            cameraRig.pullbackAtSpeed = 65f;
+            cameraRig.smoothTime = 0.1f;
+            cameraRig.rotationSmooth = 6f;
+            cameraRig.minFieldOfView = 60f;
+            cameraRig.maxFieldOfView = 72f;
+            cameraRig.fieldOfViewAtSpeed = 85f;
             CreateWorldBounds(aircraft);
             FlightHud hud = CreateHud(aircraft);
             CreateRestrictedAirspace(aircraft, hud);

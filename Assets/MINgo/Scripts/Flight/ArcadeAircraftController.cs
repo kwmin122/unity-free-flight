@@ -16,6 +16,11 @@ namespace MINgo.Flight
         public float yawTorque = 18f;
         public float stabilization = 3.5f;
         public float autoLevel = 6f;
+        public float assistedBankAngle = 35f;
+        public float bankAssistResponse = 24f;
+        public float turnYawAssist = 0.45f;
+        public float takeoffAssistPitch = 0.3f;
+        public float takeoffAssistStart01 = 0.82f;
         public float maxLiftForce = 95f;
         public float speedDrag = 0.012f;
         public float inducedDrag = 0.04f;
@@ -31,6 +36,7 @@ namespace MINgo.Flight
         public float AltitudeMeters => Mathf.Max(0f, transform.position.y);
         public float AngleOfAttackDegrees { get; private set; }
         public float LiftCoefficient { get; private set; }
+        public float RollDegrees { get; private set; }
         public AircraftState CurrentState { get; private set; } = AircraftState.Grounded;
 
         private void Awake()
@@ -60,6 +66,7 @@ namespace MINgo.Flight
             Vector3 localVelocity = transform.InverseTransformDirection(velocity);
             float forwardSpeed = Mathf.Max(0f, localVelocity.z);
             float speed01 = Mathf.Clamp01(forwardSpeed / takeoffSpeed);
+            RollDegrees = FlightControlAssist.CalculateRollDegrees(transform.up, transform.forward);
 
             body.AddForce(transform.forward * (maxThrust * Throttle01), ForceMode.Force);
 
@@ -81,11 +88,24 @@ namespace MINgo.Flight
             body.AddForce(FlightAerodynamics.CalculateDragForce(velocity, speedDrag, inducedDrag, LiftCoefficient), ForceMode.Force);
 
             float controlAuthority = Mathf.Lerp(0.35f, 1f, speed01);
-            body.AddTorque(-transform.right * (input.Pitch * pitchTorque * controlAuthority), ForceMode.Force);
-            body.AddTorque(-transform.forward * (input.Roll * rollTorque * controlAuthority), ForceMode.Force);
-            body.AddTorque(transform.up * (input.Yaw * yawTorque * controlAuthority), ForceMode.Force);
+            FlightControlOutput controls = FlightControlAssist.CalculateAssistedControls(
+                input,
+                RollDegrees,
+                forwardSpeed,
+                takeoffSpeed,
+                Throttle01,
+                hasGroundContact,
+                assistedBankAngle,
+                bankAssistResponse,
+                turnYawAssist,
+                takeoffAssistPitch,
+                takeoffAssistStart01);
 
-            if (Mathf.Abs(input.Pitch) < 0.05f && Mathf.Abs(input.Roll) < 0.05f && Mathf.Abs(input.Yaw) < 0.05f)
+            body.AddTorque(-transform.right * (controls.Pitch * pitchTorque * controlAuthority), ForceMode.Force);
+            body.AddTorque(-transform.forward * (controls.Roll * rollTorque * controlAuthority), ForceMode.Force);
+            body.AddTorque(transform.up * (controls.Yaw * yawTorque * controlAuthority), ForceMode.Force);
+
+            if (Mathf.Abs(controls.Pitch) < 0.05f && Mathf.Abs(controls.Roll) < 0.05f && Mathf.Abs(controls.Yaw) < 0.05f)
             {
                 body.AddTorque(-body.angularVelocity * stabilization, ForceMode.Force);
                 Vector3 levelCorrection = Vector3.Cross(transform.up, Vector3.up);

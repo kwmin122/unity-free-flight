@@ -39,6 +39,8 @@ namespace MINgo.Tests
             Assert.That(cameraRig, Is.Not.Null);
             Assert.That(cameraRig.target, Is.Not.Null);
             Assert.That(cameraRig.lookAhead, Is.GreaterThan(0f));
+            Assert.That(cameraRig.followDistance, Is.GreaterThanOrEqualTo(10f));
+            Assert.That(cameraRig.pitchFollow, Is.LessThanOrEqualTo(0.4f));
             Assert.That(hud, Is.Not.Null);
         }
 

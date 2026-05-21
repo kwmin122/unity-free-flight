@@ -215,3 +215,14 @@ Applied to MINgo:
 - Use a simple coefficient curve: lift rises from zero-lift angle, clamps, then weakens after stall angle.
 - Replace linear drag with speed-squared drag and induced drag tied to lift coefficient.
 - Keep one-body arcade torque controls for now; per-surface `AeroSurface` architecture remains later scope.
+
+## GTA-Like Control Pass
+
+The current playable target is easier than a full simulator: `W/S` manage throttle, `A/D` request an assisted turn, and manual pitch/roll are secondary controls. This follows the useful part of GTA-style aircraft controls: the player asks for a maneuver first, while the game assists bank, yaw, and recovery.
+
+Implementation choices:
+
+- `A/D` no longer applies raw roll forever. It targets an assisted bank angle and blends yaw assist so a normal player can turn without manually coordinating rudder and roll.
+- When there is no turn input, the assist targets level wings.
+- During takeoff, high throttle near takeoff speed adds a small nose-up assist so the first launch is not blocked by simulator knowledge.
+- The chase camera no longer inherits full aircraft roll/pitch. It follows a damped forward vector and uses world up, keeping the horizon readable.

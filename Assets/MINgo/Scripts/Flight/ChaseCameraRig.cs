@@ -5,18 +5,19 @@ namespace MINgo.Flight
     public sealed class ChaseCameraRig : MonoBehaviour
     {
         public Transform target;
-        public float followDistance = 6.7f;
-        public float followHeight = 2.05f;
+        public float followDistance = 13.5f;
+        public float followHeight = 3.2f;
         public float sideOffset;
-        public float lookAhead = 14f;
-        public float lookHeight = -0.1f;
-        public float speedPullback = 0.9f;
-        public float pullbackAtSpeed = 70f;
-        public float smoothTime = 0.08f;
-        public float rotationSmooth = 8f;
-        public float minFieldOfView = 58f;
-        public float maxFieldOfView = 68f;
-        public float fieldOfViewAtSpeed = 80f;
+        public float lookAhead = 20f;
+        public float lookHeight = 0.4f;
+        public float pitchFollow = 0.28f;
+        public float speedPullback = 4f;
+        public float pullbackAtSpeed = 65f;
+        public float smoothTime = 0.1f;
+        public float rotationSmooth = 6f;
+        public float minFieldOfView = 60f;
+        public float maxFieldOfView = 72f;
+        public float fieldOfViewAtSpeed = 85f;
 
         private Camera attachedCamera;
         private Vector3 velocity;
@@ -38,7 +39,11 @@ namespace MINgo.Flight
             Rigidbody targetBody = target.GetComponent<Rigidbody>();
             float speed = targetBody == null ? 0f : targetBody.linearVelocity.magnitude;
             Vector3 predictedTargetPosition = target.position + (targetBody == null ? Vector3.zero : targetBody.linearVelocity * Time.fixedDeltaTime);
-            Quaternion desiredRotation = target.rotation;
+            Vector3 chaseForward = CalculateChaseForward(
+                target.forward,
+                targetBody == null ? Vector3.zero : targetBody.linearVelocity,
+                pitchFollow);
+            Quaternion desiredRotation = Quaternion.LookRotation(chaseForward, Vector3.up);
 
             if (!hasSnapped)
             {
@@ -53,7 +58,8 @@ namespace MINgo.Flight
             Vector3 desiredPosition = predictedTargetPosition
                 + currentRotation * new Vector3(sideOffset, followHeight, -(followDistance + pullback));
             Vector3 lookTarget = predictedTargetPosition
-                + currentRotation * new Vector3(0f, lookHeight, lookAhead);
+                + chaseForward * lookAhead
+                + Vector3.up * lookHeight;
 
             if (!hasSnapped)
             {
@@ -65,12 +71,29 @@ namespace MINgo.Flight
                 transform.position = Vector3.SmoothDamp(transform.position, desiredPosition, ref velocity, smoothTime);
             }
 
-            transform.rotation = Quaternion.LookRotation(lookTarget - transform.position, currentRotation * Vector3.up);
+            transform.rotation = Quaternion.LookRotation(lookTarget - transform.position, Vector3.up);
 
             if (attachedCamera != null)
             {
                 attachedCamera.fieldOfView = Mathf.Lerp(minFieldOfView, maxFieldOfView, Mathf.Clamp01(speed / fieldOfViewAtSpeed));
             }
+        }
+
+        public static Vector3 CalculateChaseForward(Vector3 aircraftForward, Vector3 velocity, float pitchFollow)
+        {
+            Vector3 sourceForward = velocity.magnitude > 3f ? velocity.normalized : aircraftForward.normalized;
+            Vector3 flatForward = Vector3.ProjectOnPlane(sourceForward, Vector3.up);
+            if (flatForward.sqrMagnitude < 0.0001f)
+            {
+                flatForward = Vector3.ProjectOnPlane(aircraftForward, Vector3.up);
+            }
+
+            if (flatForward.sqrMagnitude < 0.0001f)
+            {
+                return Vector3.forward;
+            }
+
+            return Vector3.Slerp(flatForward.normalized, sourceForward.normalized, Mathf.Clamp01(pitchFollow)).normalized;
         }
     }
 }

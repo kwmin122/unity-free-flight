@@ -13,6 +13,14 @@
 ## Source Spec
 
 - `docs/superpowers/specs/2026-05-21-free-flight-sandbox-design.md`
+- `docs/research/2026-05-21-aircraft-sim-source-integration.md`
+
+## Source Integration Policy
+
+- The community aircraft-sim sources are implementation input, not optional reading.
+- Do not copy full blog text, subtitles, or unlicensed source code into this project.
+- Convert every source section into our own code structure, tuning target, phase checklist, or verification criterion.
+- Preserve MINgo's scope: arcade-first free landing sandbox, restricted-airspace hazard, no player weapon system in the MVP.
 
 ## Planning Assumptions
 

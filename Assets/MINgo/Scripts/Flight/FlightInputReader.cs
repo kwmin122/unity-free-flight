@@ -29,8 +29,15 @@ namespace MINgo.Flight
 
     public static class FlightInputReader
     {
+        private static FlightInputSnapshot? inputOverride;
+
         public static FlightInputSnapshot ReadKeyboard()
         {
+            if (inputOverride.HasValue)
+            {
+                return inputOverride.Value;
+            }
+
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null)
             {
@@ -106,6 +113,16 @@ namespace MINgo.Flight
             }
 
             return new FlightInputSnapshot(pitch, roll, yaw, turn, throttleDelta, brake);
+        }
+
+        public static void SetInputOverrideForTests(FlightInputSnapshot input)
+        {
+            inputOverride = input;
+        }
+
+        public static void ClearInputOverrideForTests()
+        {
+            inputOverride = null;
         }
     }
 }

@@ -16,6 +16,7 @@ The MVP is planned as vertical slices:
 10. Center flight reticle for GTA-like forward reference.
 11. Beginner-friendly flight assist: stall guard, S-as-slowdown, Space brake, and simpler HUD control hint.
 12. Travel landmark beacons for airport, coast, canyon, and ridge route readability.
+13. PlayMode flight smoke test for scene aircraft throttle acceleration.
 
 Primary docs:
 

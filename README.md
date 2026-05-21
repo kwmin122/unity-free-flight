@@ -12,6 +12,7 @@ The MVP is planned as vertical slices:
 6. Restricted airspace hazard with lock-on, missile evasion, damage, and emergency landing.
 7. Built-player MVP verification.
 8. GTA-like easy flight controls: W/S throttle, A/D assisted turn, Up/Down pitch, Q/E manual roll, R reset.
+9. Seaplane blockout silhouette with pontoons, struts, cockpit canopy, and red-white reference colors.
 
 Primary docs:
 

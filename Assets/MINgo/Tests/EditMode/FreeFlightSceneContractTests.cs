@@ -72,5 +72,22 @@ namespace MINgo.Tests
             Assert.That(zone.deepZone, Is.Not.Null);
             Assert.That(zone.missileSpawnPoint, Is.Not.Null);
         }
+
+        [Test]
+        public void SceneContainsSeaplaneBlockoutSilhouette()
+        {
+            string[] objectNames = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
+                .Select(transform => transform.name)
+                .ToArray();
+
+            Assert.That(objectNames, Does.Contain("Left Pontoon"));
+            Assert.That(objectNames, Does.Contain("Right Pontoon"));
+            Assert.That(objectNames, Does.Contain("Float Cross Strut Front"));
+            Assert.That(objectNames, Does.Contain("Float Cross Strut Rear"));
+            Assert.That(objectNames, Does.Contain("Cockpit Canopy"));
+            Assert.That(objectNames, Does.Contain("Tail Vertical Fin"));
+            Assert.That(objectNames, Does.Contain("Left Wing Tip Red"));
+            Assert.That(objectNames, Does.Contain("Right Wing Tip Red"));
+        }
     }
 }

@@ -20,11 +20,13 @@ The MVP is planned as vertical slices:
 14. PlayMode turn recovery: A/D banks and turns, then released controls recover toward level.
 15. In-air slowdown assist: holding S after throttle cut adds recoverable airbrake drag for landing approach.
 16. Close GTA-style chase camera: tighter aircraft framing, lower pullback, and narrower speed FOV.
+17. Imagegen world art pass: generated atlas texture applied to ocean, runway, road, fields, mountains, canyon, city blocks, and trees.
 
 Primary docs:
 
 - Spec: `docs/superpowers/specs/2026-05-21-free-flight-sandbox-design.md`
 - Plan: `docs/superpowers/plans/2026-05-21-free-flight-vertical-slice-plan.md`
 - Easy controls plan: `docs/superpowers/plans/2026-05-21-easy-flight-controls-rework-plan.md`
+- AI art and 3D asset pipeline: `docs/asset-pipeline/ai-airplane-and-world-art.md`
 
 Open `Assets/Scenes/FreeFlightSandbox.unity` in Unity before pressing Play. If the scene is empty, run `MINgo > Rebuild Free Flight Sandbox Scene`.

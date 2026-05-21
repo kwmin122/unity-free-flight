@@ -14,6 +14,20 @@ namespace MINgo.EditorTools
     public static class FreeFlightSceneBuilder
     {
         private const string ScenePath = "Assets/Scenes/FreeFlightSandbox.unity";
+        private const string WorldMaterialAtlasPath = "Assets/MINgo/Art/Textures/world-material-atlas-v1.png";
+
+        private enum WorldAtlasTile
+        {
+            Ocean,
+            Road,
+            Runway,
+            Grass,
+            Sand,
+            Mountain,
+            Canyon,
+            Building,
+            Trees
+        }
 
         [MenuItem("MINgo/Rebuild Free Flight Sandbox Scene")]
         public static void RebuildScene()
@@ -46,7 +60,10 @@ namespace MINgo.EditorTools
             ground.name = "Flight Reference Ground";
             ground.transform.position = new Vector3(0f, -0.22f, 500f);
             ground.transform.localScale = new Vector3(2200f, 0.08f, 2200f);
-            ground.GetComponent<Renderer>().sharedMaterial = MakeMaterial("Flight_Reference_Ground_Mat", new Color(0.36f, 0.52f, 0.4f));
+            ground.GetComponent<Renderer>().sharedMaterial = MakeAtlasMaterial(
+                "Flight_Reference_Ground_Mat",
+                new Color(0.36f, 0.52f, 0.4f),
+                WorldAtlasTile.Grass);
 
             CreateAirport();
             CreateCoastline();
@@ -380,7 +397,10 @@ namespace MINgo.EditorTools
             surface.name = name;
             surface.transform.position = position;
             surface.transform.localScale = scale;
-            surface.GetComponent<Renderer>().sharedMaterial = MakeMaterial(name.Replace(" ", "_") + "_Mat", color);
+            surface.GetComponent<Renderer>().sharedMaterial = MakeAtlasMaterial(
+                name.Replace(" ", "_") + "_Mat",
+                color,
+                GetSurfaceTile(kind));
             surface.AddComponent<SurfaceTag>().kind = kind;
             return surface;
         }
@@ -391,8 +411,102 @@ namespace MINgo.EditorTools
             block.name = name;
             block.transform.position = position;
             block.transform.localScale = scale;
-            block.GetComponent<Renderer>().sharedMaterial = MakeMaterial(name.Replace(" ", "_") + "_Mat", color);
+            block.GetComponent<Renderer>().sharedMaterial = MakeAtlasMaterial(
+                name.Replace(" ", "_") + "_Mat",
+                color,
+                GetBlockTile(name));
             return block;
+        }
+
+        private static WorldAtlasTile GetSurfaceTile(SurfaceKind kind)
+        {
+            return kind switch
+            {
+                SurfaceKind.Runway => WorldAtlasTile.Runway,
+                SurfaceKind.Road => WorldAtlasTile.Road,
+                SurfaceKind.Field => WorldAtlasTile.Grass,
+                SurfaceKind.Ridge => WorldAtlasTile.Mountain,
+                SurfaceKind.CanyonFloor => WorldAtlasTile.Canyon,
+                SurfaceKind.Water => WorldAtlasTile.Ocean,
+                _ => WorldAtlasTile.Grass
+            };
+        }
+
+        private static WorldAtlasTile GetBlockTile(string name)
+        {
+            if (name.Contains("City") || name.Contains("Hangar") || name.Contains("Tower") || name.Contains("Barracks"))
+            {
+                return WorldAtlasTile.Building;
+            }
+
+            if (name.Contains("Tree"))
+            {
+                return WorldAtlasTile.Trees;
+            }
+
+            if (name.Contains("Canyon"))
+            {
+                return WorldAtlasTile.Canyon;
+            }
+
+            if (name.Contains("Mountain") || name.Contains("Ridge") || name.Contains("Radar"))
+            {
+                return WorldAtlasTile.Mountain;
+            }
+
+            if (name.Contains("Road") || name.Contains("Runway") || name.Contains("Apron"))
+            {
+                return WorldAtlasTile.Runway;
+            }
+
+            if (name.Contains("Beach") || name.Contains("Sand"))
+            {
+                return WorldAtlasTile.Sand;
+            }
+
+            return WorldAtlasTile.Grass;
+        }
+
+        private static Material MakeAtlasMaterial(string name, Color color, WorldAtlasTile tile)
+        {
+            Material material = MakeMaterial(name, color);
+            Texture2D atlas = AssetDatabase.LoadAssetAtPath<Texture2D>(WorldMaterialAtlasPath);
+            if (atlas == null)
+            {
+                return material;
+            }
+
+            Vector2 scale = new Vector2(1f / 3f, 1f / 3f);
+            Vector2 offset = GetAtlasOffset(tile);
+
+            if (material.HasProperty("_BaseMap"))
+            {
+                material.SetTexture("_BaseMap", atlas);
+                material.SetTextureScale("_BaseMap", scale);
+                material.SetTextureOffset("_BaseMap", offset);
+                material.SetColor("_BaseColor", color);
+            }
+
+            if (material.HasProperty("_MainTex"))
+            {
+                material.SetTexture("_MainTex", atlas);
+                material.SetTextureScale("_MainTex", scale);
+                material.SetTextureOffset("_MainTex", offset);
+            }
+
+            material.mainTexture = atlas;
+            material.mainTextureScale = scale;
+            material.mainTextureOffset = offset;
+            return material;
+        }
+
+        private static Vector2 GetAtlasOffset(WorldAtlasTile tile)
+        {
+            int index = (int)tile;
+            int column = index % 3;
+            int topRow = index / 3;
+            int unityRow = 2 - topRow;
+            return new Vector2(column / 3f, unityRow / 3f);
         }
 
         private static Material MakeMaterial(string name, Color color)

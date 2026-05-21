@@ -4,6 +4,7 @@ using MINgo.Hazards;
 using MINgo.Landing;
 using MINgo.UI;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
@@ -12,6 +13,7 @@ namespace MINgo.Tests
     public sealed class FreeFlightSceneContractTests
     {
         private const string ScenePath = "Assets/Scenes/FreeFlightSandbox.unity";
+        private const string WorldAtlasPath = "Assets/MINgo/Art/Textures/world-material-atlas-v1.png";
 
         [OneTimeSetUp]
         public void OpenScene()
@@ -106,6 +108,39 @@ namespace MINgo.Tests
             Assert.That(objectNames, Does.Contain("Coastal Lighthouse"));
             Assert.That(objectNames, Does.Contain("Canyon Gate Beacon"));
             Assert.That(objectNames, Does.Contain("Ridge Summit Beacon"));
+        }
+
+        [Test]
+        public void SceneAppliesGeneratedWorldMaterialAtlas()
+        {
+            Texture2D atlas = AssetDatabase.LoadAssetAtPath<Texture2D>(WorldAtlasPath);
+
+            Assert.That(atlas, Is.Not.Null);
+            AssertUsesAtlas("Ocean", atlas);
+            AssertUsesAtlas("Coastal Road", atlas);
+            AssertUsesAtlas("Runway", atlas);
+            AssertUsesAtlas("Open Field", atlas);
+            AssertUsesAtlas("Beach Emergency Strip", atlas);
+            AssertUsesAtlas("Mountain Ridge Wall 0", atlas);
+            AssertUsesAtlas("Canyon Left Wall 0", atlas);
+            AssertUsesAtlas("City Edge Block 0-0", atlas);
+            AssertUsesAtlas("Field Tree Line", atlas);
+        }
+
+        private static void AssertUsesAtlas(string objectName, Texture2D atlas)
+        {
+            GameObject sceneObject = GameObject.Find(objectName);
+            Assert.That(sceneObject, Is.Not.Null, objectName);
+
+            Renderer renderer = sceneObject.GetComponent<Renderer>();
+            Assert.That(renderer, Is.Not.Null, objectName);
+            Assert.That(renderer.sharedMaterial, Is.Not.Null, objectName);
+
+            Material material = renderer.sharedMaterial;
+            Texture texture = material.HasProperty("_BaseMap")
+                ? material.GetTexture("_BaseMap")
+                : material.mainTexture;
+            Assert.That(texture, Is.SameAs(atlas), objectName);
         }
     }
 }

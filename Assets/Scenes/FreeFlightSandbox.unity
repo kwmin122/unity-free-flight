@@ -6783,18 +6783,18 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: MINgo.Runtime::MINgo.Flight.ChaseCameraRig
   target: {fileID: 1630824222}
-  followDistance: 13.5
-  followHeight: 3.2
+  followDistance: 8
+  followHeight: 2.4
   sideOffset: 0
-  lookAhead: 20
-  lookHeight: 0.4
-  pitchFollow: 0.28
-  speedPullback: 4
+  lookAhead: 14
+  lookHeight: 0.25
+  pitchFollow: 0.22
+  speedPullback: 2
   pullbackAtSpeed: 65
-  smoothTime: 0.1
-  rotationSmooth: 6
-  minFieldOfView: 60
-  maxFieldOfView: 72
+  smoothTime: 0.08
+  rotationSmooth: 8
+  minFieldOfView: 55
+  maxFieldOfView: 66
   fieldOfViewAtSpeed: 85
 --- !u!20 &685850937
 Camera:

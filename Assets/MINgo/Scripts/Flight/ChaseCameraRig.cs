@@ -5,18 +5,18 @@ namespace MINgo.Flight
     public sealed class ChaseCameraRig : MonoBehaviour
     {
         public Transform target;
-        public float followDistance = 13.5f;
-        public float followHeight = 3.2f;
+        public float followDistance = 8f;
+        public float followHeight = 2.4f;
         public float sideOffset;
-        public float lookAhead = 20f;
-        public float lookHeight = 0.4f;
-        public float pitchFollow = 0.28f;
-        public float speedPullback = 4f;
+        public float lookAhead = 14f;
+        public float lookHeight = 0.25f;
+        public float pitchFollow = 0.22f;
+        public float speedPullback = 2f;
         public float pullbackAtSpeed = 65f;
-        public float smoothTime = 0.1f;
-        public float rotationSmooth = 6f;
-        public float minFieldOfView = 60f;
-        public float maxFieldOfView = 72f;
+        public float smoothTime = 0.08f;
+        public float rotationSmooth = 8f;
+        public float minFieldOfView = 55f;
+        public float maxFieldOfView = 66f;
         public float fieldOfViewAtSpeed = 85f;
 
         private Camera attachedCamera;

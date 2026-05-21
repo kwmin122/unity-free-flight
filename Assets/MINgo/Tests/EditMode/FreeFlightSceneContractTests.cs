@@ -39,7 +39,11 @@ namespace MINgo.Tests
             Assert.That(cameraRig, Is.Not.Null);
             Assert.That(cameraRig.target, Is.Not.Null);
             Assert.That(cameraRig.lookAhead, Is.GreaterThan(0f));
-            Assert.That(cameraRig.followDistance, Is.GreaterThanOrEqualTo(10f));
+            Assert.That(cameraRig.followDistance, Is.InRange(7f, 9f));
+            Assert.That(cameraRig.followHeight, Is.InRange(2f, 2.8f));
+            Assert.That(cameraRig.speedPullback, Is.LessThanOrEqualTo(2.5f));
+            Assert.That(cameraRig.minFieldOfView, Is.LessThanOrEqualTo(56f));
+            Assert.That(cameraRig.maxFieldOfView, Is.LessThanOrEqualTo(68f));
             Assert.That(cameraRig.pitchFollow, Is.LessThanOrEqualTo(0.4f));
             Assert.That(hud, Is.Not.Null);
             Assert.That(GameObject.Find("Flight Reticle"), Is.Not.Null);

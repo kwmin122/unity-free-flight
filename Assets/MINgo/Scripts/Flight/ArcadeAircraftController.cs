@@ -105,7 +105,11 @@ namespace MINgo.Flight
             body.AddTorque(-transform.forward * (controls.Roll * rollTorque * controlAuthority), ForceMode.Force);
             body.AddTorque(transform.up * (controls.Yaw * yawTorque * controlAuthority), ForceMode.Force);
 
-            if (Mathf.Abs(controls.Pitch) < 0.05f && Mathf.Abs(controls.Roll) < 0.05f && Mathf.Abs(controls.Yaw) < 0.05f)
+            bool playerReleasedControls = Mathf.Abs(input.Pitch) < 0.05f
+                && Mathf.Abs(input.Roll) < 0.05f
+                && Mathf.Abs(input.Yaw) < 0.05f
+                && Mathf.Abs(input.Turn) < 0.05f;
+            if (playerReleasedControls)
             {
                 body.AddTorque(-body.angularVelocity * stabilization, ForceMode.Force);
                 Vector3 levelCorrection = Vector3.Cross(transform.up, Vector3.up);

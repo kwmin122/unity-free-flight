@@ -17,6 +17,7 @@ The MVP is planned as vertical slices:
 11. Beginner-friendly flight assist: stall guard, S-as-slowdown, Space brake, and simpler HUD control hint.
 12. Travel landmark beacons for airport, coast, canyon, and ridge route readability.
 13. PlayMode flight smoke test for scene aircraft throttle acceleration.
+14. PlayMode turn recovery: A/D banks and turns, then released controls recover toward level.
 
 Primary docs:
 

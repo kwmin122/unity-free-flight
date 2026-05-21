@@ -2,9 +2,11 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using MINgo.Flight;
 using MINgo.Landing;
+using MINgo.UI;
 using MINgo.World;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace MINgo.EditorTools
 {
@@ -57,6 +59,7 @@ namespace MINgo.EditorTools
             var cameraRig = cameraObject.AddComponent<ChaseCameraRig>();
             cameraRig.target = aircraft.transform;
             CreateWorldBounds(aircraft);
+            CreateHud(aircraft);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddSceneToBuildSettings(ScenePath);
@@ -165,6 +168,60 @@ namespace MINgo.EditorTools
             aircraft.AddComponent<ArcadeAircraftController>();
             aircraft.AddComponent<LandingStateMachine>();
             return aircraft;
+        }
+
+        private static void CreateHud(GameObject aircraft)
+        {
+            var canvasObject = new GameObject("Flight HUD");
+            var canvas = canvasObject.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 10;
+
+            var scaler = canvasObject.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.matchWidthOrHeight = 0.5f;
+
+            canvasObject.AddComponent<GraphicRaycaster>();
+
+            var hud = canvasObject.AddComponent<FlightHud>();
+            hud.aircraft = aircraft.GetComponent<ArcadeAircraftController>();
+            hud.landing = aircraft.GetComponent<LandingStateMachine>();
+            hud.speedText = CreateHudText("Speed", canvasObject.transform, new Vector2(28f, -28f), 22, Color.white);
+            hud.altitudeText = CreateHudText("Altitude", canvasObject.transform, new Vector2(28f, -58f), 22, Color.white);
+            hud.stateText = CreateHudText("State", canvasObject.transform, new Vector2(28f, -88f), 22, Color.white);
+            hud.contextText = CreateHudText("Landing Context", canvasObject.transform, new Vector2(28f, -132f), 28, new Color(1f, 0.91f, 0.58f));
+            hud.warningText = CreateHudText("Restricted Warning", canvasObject.transform, new Vector2(0f, -96f), 30, new Color(1f, 0.42f, 0.32f));
+            hud.warningText.alignment = TextAnchor.UpperCenter;
+            hud.warningText.rectTransform.anchorMin = new Vector2(0.5f, 1f);
+            hud.warningText.rectTransform.anchorMax = new Vector2(0.5f, 1f);
+            hud.warningText.rectTransform.pivot = new Vector2(0.5f, 1f);
+            hud.warningText.rectTransform.sizeDelta = new Vector2(720f, 42f);
+            hud.warningText.enabled = false;
+        }
+
+        private static Text CreateHudText(string name, Transform parent, Vector2 anchoredPosition, int fontSize, Color color)
+        {
+            var textObject = new GameObject(name);
+            textObject.transform.SetParent(parent, false);
+
+            var text = textObject.AddComponent<Text>();
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.fontSize = fontSize;
+            text.color = color;
+            text.alignment = TextAnchor.UpperLeft;
+            text.horizontalOverflow = HorizontalWrapMode.Overflow;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.text = string.Empty;
+
+            RectTransform rect = text.rectTransform;
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 1f);
+            rect.anchoredPosition = anchoredPosition;
+            rect.sizeDelta = new Vector2(520f, 36f);
+
+            return text;
         }
 
         private static void CreateAircraftPart(string name, Transform parent, Vector3 localPosition, Vector3 localScale, Color color)

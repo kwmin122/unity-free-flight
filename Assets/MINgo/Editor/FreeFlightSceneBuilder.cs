@@ -55,6 +55,7 @@ namespace MINgo.EditorTools
             CreateCityEdge();
             CreateMountainRidge();
             CreateCanyonRoute();
+            CreateLandmarkBeacons();
 
             GameObject aircraft = CreateAircraft();
             var cameraRig = cameraObject.AddComponent<ChaseCameraRig>();
@@ -151,6 +152,27 @@ namespace MINgo.EditorTools
                 CreateBlock("Canyon Left Wall " + i, new Vector3(198f, 28f, 555f + i * 58f), new Vector3(36f, 56f, 50f), new Color(0.42f, 0.31f, 0.23f));
                 CreateBlock("Canyon Right Wall " + i, new Vector3(302f, 31f, 555f + i * 58f), new Vector3(40f, 62f, 50f), new Color(0.39f, 0.29f, 0.22f));
             }
+        }
+
+        private static void CreateLandmarkBeacons()
+        {
+            CreateBeaconTower("Airport Beacon Tower", new Vector3(58f, 0f, -92f), 34f, new Color(0.88f, 0.18f, 0.14f), new Color(1f, 0.95f, 0.45f));
+            CreateBeaconTower("Coastal Lighthouse", new Vector3(386f, 0f, 185f), 44f, new Color(0.9f, 0.86f, 0.74f), new Color(0.25f, 0.52f, 0.95f));
+            CreateBeaconTower("Canyon Gate Beacon", new Vector3(250f, 0f, 520f), 38f, new Color(0.92f, 0.48f, 0.18f), new Color(1f, 0.76f, 0.24f));
+            CreateBeaconTower("Ridge Summit Beacon", new Vector3(-255f, 25f, 555f), 30f, new Color(0.86f, 0.28f, 0.16f), new Color(1f, 0.82f, 0.28f));
+
+            CreateBlock("Airport Beacon Base Stripe", new Vector3(58f, 18f, -92f), new Vector3(8f, 4f, 8f), new Color(0.95f, 0.95f, 0.9f));
+            CreateBlock("Coastal Lighthouse Red Band", new Vector3(386f, 23f, 185f), new Vector3(12f, 5f, 12f), new Color(0.8f, 0.12f, 0.1f));
+            CreateBlock("Canyon Gate Left Marker", new Vector3(226f, 10f, 520f), new Vector3(5f, 20f, 5f), new Color(0.95f, 0.68f, 0.18f));
+            CreateBlock("Canyon Gate Right Marker", new Vector3(274f, 10f, 520f), new Vector3(5f, 20f, 5f), new Color(0.95f, 0.68f, 0.18f));
+            CreateBlock("Ridge Summit Landing Flag", new Vector3(-235f, 45f, 552f), new Vector3(18f, 5f, 4f), new Color(0.95f, 0.76f, 0.2f));
+        }
+
+        private static void CreateBeaconTower(string name, Vector3 basePosition, float height, Color bodyColor, Color lightColor)
+        {
+            CreateBlock(name, basePosition + Vector3.up * (height * 0.5f), new Vector3(6f, height, 6f), bodyColor);
+            CreateBlock(name + " Light", basePosition + Vector3.up * (height + 3f), new Vector3(14f, 6f, 14f), lightColor);
+            CreateBlock(name + " Cap", basePosition + Vector3.up * (height + 7f), new Vector3(18f, 2.5f, 18f), new Color(0.12f, 0.13f, 0.12f));
         }
 
         private static void CreateWorldBounds(GameObject aircraft)

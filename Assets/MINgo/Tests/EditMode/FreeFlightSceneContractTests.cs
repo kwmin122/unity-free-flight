@@ -90,5 +90,18 @@ namespace MINgo.Tests
             Assert.That(objectNames, Does.Contain("Left Wing Tip Red"));
             Assert.That(objectNames, Does.Contain("Right Wing Tip Red"));
         }
+
+        [Test]
+        public void SceneContainsReadableTravelLandmarkBeacons()
+        {
+            string[] objectNames = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
+                .Select(transform => transform.name)
+                .ToArray();
+
+            Assert.That(objectNames, Does.Contain("Airport Beacon Tower"));
+            Assert.That(objectNames, Does.Contain("Coastal Lighthouse"));
+            Assert.That(objectNames, Does.Contain("Canyon Gate Beacon"));
+            Assert.That(objectNames, Does.Contain("Ridge Summit Beacon"));
+        }
     }
 }

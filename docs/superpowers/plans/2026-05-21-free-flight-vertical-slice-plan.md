@@ -157,6 +157,7 @@ Create `Assets/MINgo/Editor/MINgoBuildPipeline.cs`.
 ```csharp
 using System.IO;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 
 namespace MINgo.EditorTools
@@ -332,6 +333,14 @@ Run the scene builder, build macOS player, launch the app, and test:
 - Player can fly for one minute without immediate uncontrollable spin.
 - Camera follows without clipping through the aircraft.
 
+Tuning loop:
+- Run at least one built-player playtest before changing tuning values.
+- If takeoff fails, adjust only `maxThrust`, `lift`, or `takeoffSpeed`.
+- If the aircraft spins or overreacts, adjust only `pitchTorque`, `rollTorque`, `yawTorque`, or `stabilization`.
+- If the camera hides the aircraft or clips through it, adjust only the chase camera offset, pullback distance, or smoothing time.
+- Do at most three tuning passes in Phase 1. If the aircraft still cannot pass the one-minute free-flight check, mark the checkpoint `BLOCKED` with the exact failing behavior instead of expanding scope.
+- Record the final tuning values in `docs/superpowers/checkpoints/phase-01-flight-feel.md`.
+
 - [ ] **Step 7: Checkpoint**
 
 Create `docs/superpowers/checkpoints/phase-01-flight-feel.md`:
@@ -457,9 +466,11 @@ public bool allowsShortTakeoff = true;
 - [ ] **Step 5: Add `LandingStateMachine`**
 
 Implementation requirements:
-- Listen to `OnCollisionStay` and `OnCollisionExit`.
+- Listen to `OnCollisionEnter`, `OnCollisionStay`, `OnCollisionExit`, and `OnTriggerEnter`.
 - Derive surface kind from `SurfaceTag`.
-- Calculate vertical impact from the aircraft rigidbody velocity projected onto the contact normal.
+- On `OnCollisionEnter`, capture the first contact normal and impact speed immediately using `Mathf.Abs(Vector3.Dot(collision.relativeVelocity, contact.normal))`; do not wait for `OnCollisionStay`, because the rigidbody may already have slowed down by then.
+- Use `OnCollisionStay` only to confirm the aircraft has remained stable on the surface for at least `0.35` seconds before resolving a clean or rough landing.
+- Use `OnTriggerEnter` for water volumes so ocean failure still works if the ocean is configured as a trigger.
 - Use `LandingClassifier`.
 - Apply state to `ArcadeAircraftController`.
 - Keep the last context label for HUD.
@@ -522,6 +533,18 @@ Add greybox regions with distinct silhouettes:
 - City edge as 20 to 35 low-rise cubes.
 - Mountain ridge using large sloped cubes or terrain-like blockouts.
 - Canyon route with two wall lines and a navigable floor.
+
+Keep `FreeFlightSceneBuilder.cs` as a readable editor builder, not a runtime world generator. Split scene construction into private helper methods:
+- `CreateAirport()`
+- `CreateCoastline()`
+- `CreateRoads()`
+- `CreateCityEdge()`
+- `CreateFields()`
+- `CreateMountainRidge()`
+- `CreateCanyonRoute()`
+- `CreateLandingSurface(string name, SurfaceKind kind, Vector3 position, Vector3 scale, Color color)`
+
+Do not add a separate procedural-generation system in Phase 3.
 
 - [ ] **Step 2: Place landing opportunities intentionally**
 
@@ -587,7 +610,7 @@ HUD fields:
 - Altitude in meters.
 - Aircraft state.
 - Context label.
-- Restricted warning placeholder, hidden until Phase 5.
+- Reserved restricted-warning text field, hidden until Phase 5.
 
 Required labels:
 - `Runway landing`
@@ -676,10 +699,20 @@ Requirements:
 - Hit radius applies `Damaged` on first hit.
 - If aircraft is already damaged, severe impact can crash through existing landing/collision rules.
 
+First-pass missile tuning:
+```csharp
+public float missileSpeed = 55f;
+public float maxTurnDegreesPerSecond = 65f;
+public float missileLifetimeSeconds = 10f;
+public float hitRadiusMeters = 8f;
+```
+
+Evasion rule: the missile must be visibly dangerous but beatable. In manual testing, the player must be able to evade at least one missile by leaving the zone, diving behind the ridge, or turning through the canyon before this phase can pass.
+
 - [ ] **Step 4: Build military base marker**
 
 Scene builder creates:
-- Radar dish placeholder.
+- Simple radar dish greybox prop.
 - A few low military buildings.
 - Warning-colored boundary posts.
 - Restricted trigger volume on mountain side.
@@ -703,6 +736,7 @@ Pass criteria:
 - Terrain helps evasion: ridge/canyon/low flight.
 - First hit creates damaged/emergency landing opportunity.
 - No weapons are added.
+- If the missile hits in all three manual escape attempts, reduce `maxTurnDegreesPerSecond` or `missileSpeed` before proceeding.
 
 - [ ] **Step 7: Checkpoint**
 
@@ -828,6 +862,7 @@ Scope:
 - Verify a macOS build exists.
 
 Do not implement flight controls, landing, HUD, world layout, or hazards.
+Use `UnityEditor.Build.BuildFailedException`; do not leave the build pipeline with unresolved editor namespaces.
 Use karpathy-guidelines: smallest complete change, surgical edits, concrete verification.
 End with the checkpoint file and exact build evidence.
 ```
@@ -842,6 +877,7 @@ Scope:
 - Add chase camera.
 - Extend scene builder to spawn the aircraft.
 - Build and playtest takeoff plus one-minute flight.
+- Run the Phase 1 tuning loop and record final tuning values.
 
 Do not implement landing classification, HUD, world expansion, or restricted airspace.
 End with the Phase 1 checkpoint and tuning notes.
@@ -855,6 +891,8 @@ Implement Phase 2 from docs/superpowers/plans/2026-05-21-free-flight-vertical-sl
 Scope:
 - Write landing classifier tests first.
 - Implement surface tags, landing classifier, and landing state machine.
+- Capture landing impact on `OnCollisionEnter`; use `OnCollisionStay` only for settled contact.
+- Handle ocean failure through `OnTriggerEnter` if water is configured as a trigger.
 - Add runway, road, field, ridge, canyon, and water test surfaces.
 - Verify clean landing, rough/crash, submerged, and repeat takeoff.
 
@@ -870,6 +908,7 @@ Implement Phase 3 from docs/superpowers/plans/2026-05-21-free-flight-vertical-sl
 Scope:
 - Expand the greybox map into airport, coast, road, field, city edge, ridge, and canyon.
 - Keep everything simple and readable.
+- Keep `FreeFlightSceneBuilder.cs` split into private helper methods; do not create a procedural world system.
 - Ensure the first five minutes create self-directed landing temptations.
 
 Do not add art polish, missions, combat, or missile hazards.
@@ -899,6 +938,7 @@ Scope:
 - Add restricted airspace on the mountain side.
 - Add warning, lock-on, missile launch, evasion, damaged state, and emergency landing flow.
 - Keep it as an environmental hazard, not combat.
+- Tune the missile so it is visibly dangerous but beatable through ridge, canyon, or zone-exit evasion.
 
 Do not add player weapons, base destruction, dogfighting, or combat progression.
 End with evasion and damaged-emergency-landing checkpoint evidence.
@@ -933,7 +973,7 @@ Spec coverage:
 - Full MVP loop verification: Phase 6.
 
 Placeholder scan:
-- No unresolved placeholder markers remain.
+- No unresolved planning-marker strings remain.
 - Every phase has a concrete goal, files, scope exclusions, and verification.
 
 Scope check:

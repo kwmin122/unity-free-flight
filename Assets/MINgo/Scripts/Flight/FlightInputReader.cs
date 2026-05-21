@@ -37,52 +37,75 @@ namespace MINgo.Flight
                 return new FlightInputSnapshot(0f, 0f, 0f, 0f, false);
             }
 
+            return CreateKeyboardSnapshot(
+                pitchUp: keyboard.upArrowKey.isPressed,
+                pitchDown: keyboard.downArrowKey.isPressed,
+                rollLeft: keyboard.qKey.isPressed,
+                rollRight: keyboard.eKey.isPressed,
+                turnLeft: keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed,
+                turnRight: keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed,
+                throttleUp: keyboard.wKey.isPressed || keyboard.leftShiftKey.isPressed,
+                throttleDown: keyboard.sKey.isPressed || keyboard.leftCtrlKey.isPressed,
+                brake: keyboard.spaceKey.isPressed);
+        }
+
+        public static FlightInputSnapshot CreateKeyboardSnapshot(
+            bool pitchUp,
+            bool pitchDown,
+            bool rollLeft,
+            bool rollRight,
+            bool turnLeft,
+            bool turnRight,
+            bool throttleUp,
+            bool throttleDown,
+            bool brake)
+        {
             float pitch = 0f;
-            if (keyboard.upArrowKey.isPressed)
+            if (pitchUp)
             {
                 pitch -= 1f;
             }
 
-            if (keyboard.downArrowKey.isPressed)
+            if (pitchDown)
             {
                 pitch += 1f;
             }
 
             float roll = 0f;
-            if (keyboard.qKey.isPressed)
+            if (rollLeft)
             {
                 roll -= 1f;
             }
 
-            if (keyboard.eKey.isPressed)
+            if (rollRight)
             {
                 roll += 1f;
             }
 
             float yaw = 0f;
             float turn = 0f;
-            if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed)
+            if (turnLeft)
             {
                 turn -= 1f;
             }
 
-            if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed)
+            if (turnRight)
             {
                 turn += 1f;
             }
 
             float throttleDelta = 0f;
-            if (keyboard.wKey.isPressed || keyboard.leftShiftKey.isPressed)
+            if (throttleUp)
             {
                 throttleDelta += 1f;
             }
 
-            if (keyboard.sKey.isPressed || keyboard.leftCtrlKey.isPressed)
+            if (throttleDown)
             {
                 throttleDelta -= 1f;
             }
 
-            return new FlightInputSnapshot(pitch, roll, yaw, turn, throttleDelta, keyboard.spaceKey.isPressed || keyboard.sKey.isPressed);
+            return new FlightInputSnapshot(pitch, roll, yaw, turn, throttleDelta, brake);
         }
     }
 }

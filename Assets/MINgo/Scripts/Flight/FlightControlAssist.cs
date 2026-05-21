@@ -45,7 +45,10 @@ namespace MINgo.Flight
             float bankResponseDegrees = 24f,
             float turnYawAssist = 0.45f,
             float takeoffAssistPitch = 0.3f,
-            float takeoffAssistStart01 = 0.82f)
+            float takeoffAssistStart01 = 0.82f,
+            float stallGuardSpeed01 = 0.72f,
+            float stallPitchLimit = 0.35f,
+            float stallRecoveryPitch = -0.22f)
         {
             float turn = Mathf.Clamp(input.Turn, -1f, 1f);
             float manualRoll = Mathf.Clamp(input.Roll, -1f, 1f);
@@ -66,6 +69,15 @@ namespace MINgo.Flight
                 hasGroundContact,
                 takeoffAssistPitch,
                 takeoffAssistStart01), -1f, 1f);
+            pitch = ApplyStallGuardPitch(
+                pitch,
+                input.Pitch,
+                forwardSpeed,
+                takeoffSpeed,
+                hasGroundContact,
+                stallGuardSpeed01,
+                stallPitchLimit,
+                stallRecoveryPitch);
             float roll = Mathf.Clamp(manualRoll + assistedRoll, -1f, 1f);
             float yaw = Mathf.Clamp(input.Yaw + turn * turnYawAssist, -1f, 1f);
 
@@ -90,6 +102,41 @@ namespace MINgo.Flight
             float speedBlend = Mathf.InverseLerp(takeoffAssistStart01, 1f, speed01);
             float throttleBlend = Mathf.InverseLerp(0.65f, 1f, throttle01);
             return takeoffAssistPitch * speedBlend * throttleBlend;
+        }
+
+        private static float ApplyStallGuardPitch(
+            float pitch,
+            float pitchInput,
+            float forwardSpeed,
+            float takeoffSpeed,
+            bool hasGroundContact,
+            float stallGuardSpeed01,
+            float stallPitchLimit,
+            float stallRecoveryPitch)
+        {
+            if (hasGroundContact || takeoffSpeed <= 0f)
+            {
+                return pitch;
+            }
+
+            float speed01 = Mathf.Clamp01(forwardSpeed / takeoffSpeed);
+            if (speed01 >= stallGuardSpeed01)
+            {
+                return pitch;
+            }
+
+            if (pitch > stallPitchLimit)
+            {
+                pitch = stallPitchLimit;
+            }
+
+            if (Mathf.Abs(pitchInput) <= 0.05f)
+            {
+                float recoveryBlend = Mathf.Clamp01((stallGuardSpeed01 - speed01) / Mathf.Max(0.001f, stallGuardSpeed01));
+                pitch += stallRecoveryPitch * recoveryBlend;
+            }
+
+            return Mathf.Clamp(pitch, -1f, 1f);
         }
     }
 }

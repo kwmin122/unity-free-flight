@@ -93,5 +93,49 @@ namespace MINgo.Tests
 
             Assert.That(output.Pitch, Is.GreaterThan(0f));
         }
+
+        [Test]
+        public void CalculateAssistedControls_LimitsPitchUpNearStall()
+        {
+            FlightInputSnapshot input = new FlightInputSnapshot(
+                pitch: 1f,
+                roll: 0f,
+                yaw: 0f,
+                turn: 0f,
+                throttleDelta: 0f,
+                brake: false);
+
+            FlightControlOutput output = FlightControlAssist.CalculateAssistedControls(
+                input,
+                currentRollDegrees: 0f,
+                forwardSpeed: 8f,
+                takeoffSpeed: 22f,
+                throttle01: 0.4f,
+                hasGroundContact: false);
+
+            Assert.That(output.Pitch, Is.LessThan(0.5f));
+        }
+
+        [Test]
+        public void CalculateAssistedControls_AddsNoseDownRecoveryNearStall()
+        {
+            FlightInputSnapshot input = new FlightInputSnapshot(
+                pitch: 0f,
+                roll: 0f,
+                yaw: 0f,
+                turn: 0f,
+                throttleDelta: 0f,
+                brake: false);
+
+            FlightControlOutput output = FlightControlAssist.CalculateAssistedControls(
+                input,
+                currentRollDegrees: 0f,
+                forwardSpeed: 7f,
+                takeoffSpeed: 22f,
+                throttle01: 0.3f,
+                hasGroundContact: false);
+
+            Assert.That(output.Pitch, Is.LessThan(0f));
+        }
     }
 }

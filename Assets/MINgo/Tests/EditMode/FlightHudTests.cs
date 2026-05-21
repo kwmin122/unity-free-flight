@@ -1,3 +1,4 @@
+using MINgo.Hazards;
 using MINgo.Landing;
 using MINgo.UI;
 using NUnit.Framework;
@@ -23,6 +24,15 @@ namespace MINgo.Tests
         public void FormatContextLabel_HidesEmptyContext()
         {
             Assert.AreEqual(string.Empty, FlightHud.FormatContextLabel(LandingContext.None));
+        }
+
+        [TestCase(RestrictedAirspacePhase.Warning, "Restricted airspace")]
+        [TestCase(RestrictedAirspacePhase.Locking, "Lock-on")]
+        [TestCase(RestrictedAirspacePhase.MissileLaunched, "Missile launched")]
+        [TestCase(RestrictedAirspacePhase.Escaped, "Escaped")]
+        public void FormatRestrictedWarning_ReturnsHudWarning(RestrictedAirspacePhase phase, string expected)
+        {
+            Assert.AreEqual(expected, FlightHud.FormatRestrictedWarning(phase));
         }
     }
 }

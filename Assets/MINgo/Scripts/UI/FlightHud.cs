@@ -1,3 +1,4 @@
+using MINgo.Hazards;
 using MINgo.Flight;
 using MINgo.Landing;
 using UnityEngine;
@@ -65,6 +66,18 @@ namespace MINgo.UI
                 LandingContext.EmergencyLanding => "Emergency landing",
                 LandingContext.Submerged => "Submerged",
                 LandingContext.RestrictedAirspace => "Restricted airspace",
+                _ => string.Empty
+            };
+        }
+
+        public static string FormatRestrictedWarning(RestrictedAirspacePhase phase)
+        {
+            return phase switch
+            {
+                RestrictedAirspacePhase.Warning => "Restricted airspace",
+                RestrictedAirspacePhase.Locking => "Lock-on",
+                RestrictedAirspacePhase.MissileLaunched => "Missile launched",
+                RestrictedAirspacePhase.Escaped => "Escaped",
                 _ => string.Empty
             };
         }

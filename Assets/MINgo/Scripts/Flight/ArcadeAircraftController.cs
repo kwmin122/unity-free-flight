@@ -75,19 +75,33 @@ namespace MINgo.Flight
                 body.AddForce(-body.linearVelocity * groundBrake, ForceMode.Force);
             }
 
-            if (!hasGroundContact || SpeedMetersPerSecond >= takeoffSpeed)
-            {
-                CurrentState = AircraftState.Flying;
-            }
-            else if (CurrentState != AircraftState.Landed && CurrentState != AircraftState.Damaged)
-            {
-                CurrentState = AircraftState.Grounded;
-            }
+            CurrentState = ResolveMotionState(CurrentState, hasGroundContact, SpeedMetersPerSecond, takeoffSpeed);
         }
 
         public void SetAircraftState(AircraftState state)
         {
             CurrentState = state;
+        }
+
+        public static AircraftState ResolveMotionState(
+            AircraftState currentState,
+            bool hasGroundContact,
+            float speedMetersPerSecond,
+            float takeoffSpeed)
+        {
+            if (currentState == AircraftState.Crashed
+                || currentState == AircraftState.Submerged
+                || currentState == AircraftState.Damaged)
+            {
+                return currentState;
+            }
+
+            if (!hasGroundContact || speedMetersPerSecond >= takeoffSpeed)
+            {
+                return AircraftState.Flying;
+            }
+
+            return currentState == AircraftState.Landed ? AircraftState.Landed : AircraftState.Grounded;
         }
 
         private void OnCollisionStay(Collision collision)

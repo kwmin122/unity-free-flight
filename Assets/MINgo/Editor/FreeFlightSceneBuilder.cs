@@ -1,6 +1,7 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using MINgo.Flight;
+using MINgo.Hazards;
 using MINgo.Landing;
 using MINgo.UI;
 using MINgo.World;
@@ -59,7 +60,8 @@ namespace MINgo.EditorTools
             var cameraRig = cameraObject.AddComponent<ChaseCameraRig>();
             cameraRig.target = aircraft.transform;
             CreateWorldBounds(aircraft);
-            CreateHud(aircraft);
+            FlightHud hud = CreateHud(aircraft);
+            CreateRestrictedAirspace(aircraft, hud);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddSceneToBuildSettings(ScenePath);
@@ -127,7 +129,6 @@ namespace MINgo.EditorTools
 
             GameObject shelf = CreateLandingSurface("Ridge Landing Shelf", SurfaceKind.Ridge, new Vector3(-255f, 24f, 555f), new Vector3(105f, 0.3f, 48f), new Color(0.39f, 0.37f, 0.32f));
             shelf.transform.rotation = Quaternion.Euler(0f, 8f, 12f);
-            CreateBlock("Restricted Airspace Placeholder Base", new Vector3(-470f, 38f, 790f), new Vector3(46f, 20f, 46f), new Color(0.28f, 0.3f, 0.32f));
         }
 
         private static void CreateCanyonRoute()
@@ -170,7 +171,7 @@ namespace MINgo.EditorTools
             return aircraft;
         }
 
-        private static void CreateHud(GameObject aircraft)
+        private static FlightHud CreateHud(GameObject aircraft)
         {
             var canvasObject = new GameObject("Flight HUD");
             var canvas = canvasObject.AddComponent<Canvas>();
@@ -198,6 +199,7 @@ namespace MINgo.EditorTools
             hud.warningText.rectTransform.pivot = new Vector2(0.5f, 1f);
             hud.warningText.rectTransform.sizeDelta = new Vector2(720f, 42f);
             hud.warningText.enabled = false;
+            return hud;
         }
 
         private static Text CreateHudText(string name, Transform parent, Vector2 anchoredPosition, int fontSize, Color color)
@@ -222,6 +224,76 @@ namespace MINgo.EditorTools
             rect.sizeDelta = new Vector2(520f, 36f);
 
             return text;
+        }
+
+        private static void CreateRestrictedAirspace(GameObject aircraft, FlightHud hud)
+        {
+            GameObject root = new GameObject("Restricted Airspace");
+            root.transform.position = new Vector3(-470f, 48f, 790f);
+
+            GameObject outer = CreateTriggerBox(
+                "Restricted Outer Zone",
+                root.transform,
+                Vector3.zero,
+                new Vector3(330f, 170f, 290f),
+                new Color(0.75f, 0.58f, 0.18f, 0.22f));
+
+            GameObject deep = CreateTriggerBox(
+                "Restricted Deep Lock Zone",
+                root.transform,
+                new Vector3(0f, -2f, 0f),
+                new Vector3(145f, 96f, 135f),
+                new Color(0.9f, 0.18f, 0.12f, 0.3f));
+
+            Transform spawn = CreateBlock(
+                "Missile Launch Point",
+                new Vector3(-500f, 55f, 790f),
+                new Vector3(4f, 4f, 8f),
+                new Color(0.65f, 0.12f, 0.08f)).transform;
+
+            var zone = root.AddComponent<RestrictedAirspaceZone>();
+            zone.aircraft = aircraft.GetComponent<ArcadeAircraftController>();
+            zone.hud = hud;
+            zone.outerZone = outer.GetComponent<Collider>();
+            zone.deepZone = deep.GetComponent<Collider>();
+            zone.missileSpawnPoint = spawn;
+
+            CreateMilitaryBaseMarkers();
+        }
+
+        private static void CreateMilitaryBaseMarkers()
+        {
+            CreateBlock("Restricted Base Barracks", new Vector3(-458f, 38f, 762f), new Vector3(34f, 10f, 24f), new Color(0.25f, 0.29f, 0.28f));
+            CreateBlock("Restricted Base Hangar", new Vector3(-512f, 40f, 824f), new Vector3(50f, 14f, 34f), new Color(0.31f, 0.33f, 0.32f));
+            CreateBlock("Radar Tower", new Vector3(-476f, 58f, 795f), new Vector3(8f, 34f, 8f), new Color(0.44f, 0.46f, 0.43f));
+
+            GameObject dish = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            dish.name = "Radar Dish";
+            dish.transform.position = new Vector3(-476f, 78f, 795f);
+            dish.transform.rotation = Quaternion.Euler(18f, -35f, 0f);
+            dish.transform.localScale = new Vector3(22f, 4f, 22f);
+            dish.GetComponent<Renderer>().sharedMaterial = MakeMaterial("Radar_Dish_Mat", new Color(0.58f, 0.6f, 0.56f));
+
+            for (int i = 0; i < 8; i++)
+            {
+                float angle = i * 45f * Mathf.Deg2Rad;
+                Vector3 position = new Vector3(-470f + Mathf.Cos(angle) * 165f, 10f, 790f + Mathf.Sin(angle) * 145f);
+                CreateBlock("Restricted Boundary Post " + i, position, new Vector3(3f, 20f, 3f), new Color(0.95f, 0.72f, 0.12f));
+            }
+        }
+
+        private static GameObject CreateTriggerBox(string name, Transform parent, Vector3 localPosition, Vector3 localScale, Color color)
+        {
+            GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            box.name = name;
+            box.transform.SetParent(parent, false);
+            box.transform.localPosition = localPosition;
+            box.transform.localScale = localScale;
+            box.GetComponent<Collider>().isTrigger = true;
+            Renderer renderer = box.GetComponent<Renderer>();
+            renderer.sharedMaterial = MakeMaterial(name.Replace(" ", "_") + "_Mat", color);
+            renderer.enabled = false;
+            return box;
         }
 
         private static void CreateAircraftPart(string name, Transform parent, Vector3 localPosition, Vector3 localScale, Color color)

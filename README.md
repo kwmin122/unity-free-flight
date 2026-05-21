@@ -18,6 +18,7 @@ The MVP is planned as vertical slices:
 12. Travel landmark beacons for airport, coast, canyon, and ridge route readability.
 13. PlayMode flight smoke test for scene aircraft throttle acceleration.
 14. PlayMode turn recovery: A/D banks and turns, then released controls recover toward level.
+15. In-air slowdown assist: holding S after throttle cut adds recoverable airbrake drag for landing approach.
 
 Primary docs:
 

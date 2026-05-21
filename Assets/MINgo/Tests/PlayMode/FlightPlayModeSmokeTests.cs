@@ -102,6 +102,107 @@ namespace MINgo.Tests
             Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Submerged));
         }
 
+        [UnityTest]
+        public IEnumerator HoldingSlowdownInputAddsAirbrakeDragAfterThrottleCut()
+        {
+            yield return LoadFreeFlightScene();
+            ArcadeAircraftController aircraft = FindAircraft();
+            Assert.That(aircraft, Is.Not.Null);
+
+            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
+                pitch: 0f,
+                roll: 0f,
+                yaw: 0f,
+                turn: 0f,
+                throttleDelta: 1f,
+                brake: false));
+
+            for (int i = 0; i < 240; i++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
+                pitch: 0f,
+                roll: 0f,
+                yaw: 0f,
+                turn: 0f,
+                throttleDelta: -1f,
+                brake: false));
+
+            for (int i = 0; i < 120; i++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            float idleStartSpeed = aircraft.SpeedMetersPerSecond;
+            Assert.That(aircraft.Throttle01, Is.LessThan(0.05f));
+
+            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
+                pitch: 0f,
+                roll: 0f,
+                yaw: 0f,
+                turn: 0f,
+                throttleDelta: 0f,
+                brake: false));
+
+            for (int i = 0; i < 120; i++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            float idleFinalSpeed = aircraft.SpeedMetersPerSecond;
+
+            yield return LoadFreeFlightScene();
+            aircraft = FindAircraft();
+            Assert.That(aircraft, Is.Not.Null);
+
+            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
+                pitch: 0f,
+                roll: 0f,
+                yaw: 0f,
+                turn: 0f,
+                throttleDelta: 1f,
+                brake: false));
+
+            for (int i = 0; i < 240; i++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
+                pitch: 0f,
+                roll: 0f,
+                yaw: 0f,
+                turn: 0f,
+                throttleDelta: -1f,
+                brake: false));
+
+            for (int i = 0; i < 120; i++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            float airbrakeStartSpeed = aircraft.SpeedMetersPerSecond;
+
+            for (int i = 0; i < 120; i++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            float airbrakeFinalSpeed = aircraft.SpeedMetersPerSecond;
+
+            Assert.That(idleStartSpeed, Is.GreaterThan(12f));
+            Assert.That(airbrakeStartSpeed, Is.InRange(idleStartSpeed * 0.9f, idleStartSpeed * 1.1f));
+            Assert.That(aircraft.Throttle01, Is.LessThan(0.05f));
+            Assert.That(
+                airbrakeFinalSpeed,
+                Is.LessThan(idleFinalSpeed * 0.9f),
+                $"Expected held slowdown to add airbrake drag. idle={idleFinalSpeed:0.00}, airbrake={airbrakeFinalSpeed:0.00}");
+            Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Crashed));
+            Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Submerged));
+        }
+
         private static IEnumerator LoadFreeFlightScene()
         {
             SceneManager.LoadScene("FreeFlightSandbox");

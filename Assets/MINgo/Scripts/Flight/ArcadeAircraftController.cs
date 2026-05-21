@@ -24,6 +24,7 @@ namespace MINgo.Flight
         public float maxLiftForce = 95f;
         public float speedDrag = 0.012f;
         public float inducedDrag = 0.04f;
+        public float airbrakeDrag = 0.01f;
         public float groundBrake = 16f;
         public float takeoffSpeed = 22f;
         public float throttleChangeRate = 0.6f;
@@ -86,6 +87,10 @@ namespace MINgo.Flight
 
             body.AddForce(liftForce, ForceMode.Force);
             body.AddForce(FlightAerodynamics.CalculateDragForce(velocity, speedDrag, inducedDrag, LiftCoefficient), ForceMode.Force);
+            if (input.ThrottleDelta < -0.05f && !hasGroundContact && velocity.sqrMagnitude > 1f)
+            {
+                body.AddForce(-velocity.normalized * (velocity.sqrMagnitude * airbrakeDrag), ForceMode.Force);
+            }
 
             float controlAuthority = Mathf.Lerp(0.35f, 1f, speed01);
             FlightControlOutput controls = FlightControlAssist.CalculateAssistedControls(

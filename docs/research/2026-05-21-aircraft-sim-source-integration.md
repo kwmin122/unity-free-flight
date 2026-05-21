@@ -194,3 +194,24 @@ Phase 6+:
 - Add pivoted control surface visuals.
 - Add afterburner/engine audio tied to throttle/speed.
 - Replace simple lift/drag with angle-of-attack coefficient curves when the arcade loop is already fun.
+
+## Flight Model Upgrade Pass
+
+Additional primary references checked on 2026-05-21:
+
+- Unity `Rigidbody.AddForce`: https://docs.unity.cn/ScriptReference/Rigidbody.AddForce.html
+- Unity `ForceMode`: https://docs.unity3d.com/ScriptReference/ForceMode.html
+- Unity `Rigidbody.linearVelocity`: https://docs.unity.cn/6000.1/Documentation/ScriptReference/Rigidbody-linearVelocity.html
+- NASA Glenn lift equation: https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/lift-equation/
+- JSBSim frames of reference: https://jsbsim-team.github.io/jsbsim-reference-manual/user/concepts/frames-of-reference/
+- `gasgiant/Aircraft-Physics` Unity reference: https://github.com/gasgiant/Aircraft-Physics
+
+Applied to MINgo:
+
+- Use `Rigidbody.linearVelocity` as the airspeed vector because this Unity 6 project is already on the renamed API.
+- Keep forces in `FixedUpdate` and apply them through `Rigidbody.AddForce`, not transform rotation.
+- Replace world-up lift with aircraft/right-axis lift: lift direction is perpendicular to current velocity and the aircraft right axis, so banking also banks lift.
+- Calculate angle of attack from aircraft-local velocity before evaluating lift.
+- Use a simple coefficient curve: lift rises from zero-lift angle, clamps, then weakens after stall angle.
+- Replace linear drag with speed-squared drag and induced drag tied to lift coefficient.
+- Keep one-body arcade torque controls for now; per-surface `AeroSurface` architecture remains later scope.

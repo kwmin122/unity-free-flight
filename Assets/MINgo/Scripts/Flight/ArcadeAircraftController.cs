@@ -7,13 +7,18 @@ namespace MINgo.Flight
     {
         public float maxThrust = 85f;
         public float lift = 0.55f;
+        public float zeroLiftAngle = -2f;
+        public float liftSlope = 0.08f;
+        public float stallAngle = 16f;
+        public float maxLiftCoefficient = 1.2f;
         public float pitchTorque = 35f;
         public float rollTorque = 55f;
         public float yawTorque = 18f;
         public float stabilization = 3.5f;
         public float autoLevel = 6f;
         public float maxLiftForce = 95f;
-        public float speedDrag = 0.18f;
+        public float speedDrag = 0.012f;
+        public float inducedDrag = 0.04f;
         public float groundBrake = 16f;
         public float takeoffSpeed = 22f;
         public float throttleChangeRate = 0.6f;
@@ -24,14 +29,16 @@ namespace MINgo.Flight
         public float Throttle01 { get; private set; }
         public float SpeedMetersPerSecond => body == null ? 0f : body.linearVelocity.magnitude;
         public float AltitudeMeters => Mathf.Max(0f, transform.position.y);
+        public float AngleOfAttackDegrees { get; private set; }
+        public float LiftCoefficient { get; private set; }
         public AircraftState CurrentState { get; private set; } = AircraftState.Grounded;
 
         private void Awake()
         {
             body = GetComponent<Rigidbody>();
             body.useGravity = true;
-            body.linearDamping = 0.08f;
-            body.angularDamping = 1.15f;
+            body.linearDamping = 0.01f;
+            body.angularDamping = 0.9f;
             body.interpolation = RigidbodyInterpolation.Interpolate;
             body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         }
@@ -49,14 +56,29 @@ namespace MINgo.Flight
                 return;
             }
 
-            float forwardSpeed = Vector3.Dot(body.linearVelocity, transform.forward);
-            float speed01 = Mathf.Clamp01(Mathf.Abs(forwardSpeed) / takeoffSpeed);
+            Vector3 velocity = body.linearVelocity;
+            Vector3 localVelocity = transform.InverseTransformDirection(velocity);
+            float forwardSpeed = Mathf.Max(0f, localVelocity.z);
+            float speed01 = Mathf.Clamp01(forwardSpeed / takeoffSpeed);
 
             body.AddForce(transform.forward * (maxThrust * Throttle01), ForceMode.Force);
 
-            float liftForce = Mathf.Min(Mathf.Max(0f, forwardSpeed * forwardSpeed) * lift * 0.08f * body.mass, maxLiftForce);
-            body.AddForce(Vector3.up * liftForce, ForceMode.Force);
-            body.AddForce(-body.linearVelocity * speedDrag, ForceMode.Force);
+            AngleOfAttackDegrees = FlightAerodynamics.CalculateAngleOfAttackDegrees(localVelocity);
+            LiftCoefficient = FlightAerodynamics.EvaluateLiftCoefficient(
+                AngleOfAttackDegrees,
+                zeroLiftAngle,
+                liftSlope,
+                stallAngle,
+                maxLiftCoefficient);
+
+            Vector3 liftForce = FlightAerodynamics.CalculateLiftForce(velocity, transform.right, LiftCoefficient, lift);
+            if (liftForce.magnitude > maxLiftForce)
+            {
+                liftForce = liftForce.normalized * maxLiftForce;
+            }
+
+            body.AddForce(liftForce, ForceMode.Force);
+            body.AddForce(FlightAerodynamics.CalculateDragForce(velocity, speedDrag, inducedDrag, LiftCoefficient), ForceMode.Force);
 
             float controlAuthority = Mathf.Lerp(0.35f, 1f, speed01);
             body.AddTorque(-transform.right * (input.Pitch * pitchTorque * controlAuthority), ForceMode.Force);

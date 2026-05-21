@@ -98,6 +98,36 @@ namespace MINgo.Tests
         }
 
         [Test]
+        public void SceneContainsReferenceDrivenSeaplaneDetails()
+        {
+            Transform aircraft = GameObject.Find("Player Aircraft").transform;
+
+            Assert.That(aircraft.Find("Wing").localPosition.y, Is.GreaterThan(0.45f));
+            Assert.That(aircraft.Find("High Wing Pylon"), Is.Not.Null);
+            Assert.That(aircraft.Find("Left Wing Strut Front"), Is.Not.Null);
+            Assert.That(aircraft.Find("Right Wing Strut Front"), Is.Not.Null);
+            Assert.That(aircraft.Find("Left Wing Strut Rear"), Is.Not.Null);
+            Assert.That(aircraft.Find("Right Wing Strut Rear"), Is.Not.Null);
+            Assert.That(aircraft.Find("Propeller Hub"), Is.Not.Null);
+            Assert.That(aircraft.Find("Propeller Blade Horizontal"), Is.Not.Null);
+            Assert.That(aircraft.Find("Propeller Blade Vertical"), Is.Not.Null);
+            AssertVisualOnlyPart(aircraft, "Wing");
+            AssertVisualOnlyPart(aircraft, "Left Wing Tip Red");
+            AssertVisualOnlyPart(aircraft, "Right Wing Tip Red");
+            AssertVisualOnlyPart(aircraft, "High Wing Pylon");
+            AssertVisualOnlyPart(aircraft, "Left Wing Strut Front");
+            AssertVisualOnlyPart(aircraft, "Right Wing Strut Front");
+            AssertVisualOnlyPart(aircraft, "Left Wing Strut Rear");
+            AssertVisualOnlyPart(aircraft, "Right Wing Strut Rear");
+            AssertVisualOnlyPart(aircraft, "Propeller Hub");
+            AssertVisualOnlyPart(aircraft, "Propeller Blade Horizontal");
+            AssertVisualOnlyPart(aircraft, "Propeller Blade Vertical");
+            AssertPhysicsOnlyPart(aircraft, "Wing Physics Collider");
+            AssertPhysicsOnlyPart(aircraft, "Left Wing Tip Physics Collider");
+            AssertPhysicsOnlyPart(aircraft, "Right Wing Tip Physics Collider");
+        }
+
+        [Test]
         public void SceneContainsReadableTravelLandmarkBeacons()
         {
             string[] objectNames = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
@@ -141,6 +171,21 @@ namespace MINgo.Tests
                 ? material.GetTexture("_BaseMap")
                 : material.mainTexture;
             Assert.That(texture, Is.SameAs(atlas), objectName);
+        }
+
+        private static void AssertVisualOnlyPart(Transform aircraft, string childName)
+        {
+            Transform part = aircraft.Find(childName);
+            Assert.That(part, Is.Not.Null, childName);
+            Assert.That(part.GetComponent<Collider>(), Is.Null, childName);
+        }
+
+        private static void AssertPhysicsOnlyPart(Transform aircraft, string childName)
+        {
+            Transform part = aircraft.Find(childName);
+            Assert.That(part, Is.Not.Null, childName);
+            Assert.That(part.GetComponent<Collider>(), Is.Not.Null, childName);
+            Assert.That(part.GetComponent<Renderer>().enabled, Is.False, childName);
         }
     }
 }

@@ -213,13 +213,24 @@ namespace MINgo.EditorTools
             body.useGravity = true;
 
             CreateAircraftPart("Fuselage", aircraft.transform, new Vector3(0f, 0f, 0f), new Vector3(1.4f, 0.8f, 5.6f), new Color(0.85f, 0.87f, 0.82f));
-            CreateAircraftPart("Wing", aircraft.transform, new Vector3(0f, 0f, -0.2f), new Vector3(8.5f, 0.18f, 1.3f), new Color(0.72f, 0.76f, 0.74f));
-            CreateAircraftPart("Left Wing Tip Red", aircraft.transform, new Vector3(-4.5f, 0f, -0.2f), new Vector3(0.7f, 0.2f, 1.35f), new Color(0.88f, 0.12f, 0.1f));
-            CreateAircraftPart("Right Wing Tip Red", aircraft.transform, new Vector3(4.5f, 0f, -0.2f), new Vector3(0.7f, 0.2f, 1.35f), new Color(0.88f, 0.12f, 0.1f));
+            CreateAircraftVisualPart("Wing", aircraft.transform, new Vector3(0f, 0.72f, -0.2f), new Vector3(8.5f, 0.18f, 1.3f), new Color(0.72f, 0.76f, 0.74f));
+            CreateAircraftVisualPart("Left Wing Tip Red", aircraft.transform, new Vector3(-4.5f, 0.72f, -0.2f), new Vector3(0.7f, 0.2f, 1.35f), new Color(0.88f, 0.12f, 0.1f));
+            CreateAircraftVisualPart("Right Wing Tip Red", aircraft.transform, new Vector3(4.5f, 0.72f, -0.2f), new Vector3(0.7f, 0.2f, 1.35f), new Color(0.88f, 0.12f, 0.1f));
+            CreateAircraftPhysicsCollider("Wing Physics Collider", aircraft.transform, new Vector3(0f, 0f, -0.2f), new Vector3(8.5f, 0.18f, 1.3f));
+            CreateAircraftPhysicsCollider("Left Wing Tip Physics Collider", aircraft.transform, new Vector3(-4.5f, 0f, -0.2f), new Vector3(0.7f, 0.2f, 1.35f));
+            CreateAircraftPhysicsCollider("Right Wing Tip Physics Collider", aircraft.transform, new Vector3(4.5f, 0f, -0.2f), new Vector3(0.7f, 0.2f, 1.35f));
+            CreateAircraftVisualPart("High Wing Pylon", aircraft.transform, new Vector3(0f, 0.38f, 0.05f), new Vector3(0.3f, 0.72f, 0.82f), new Color(0.8f, 0.82f, 0.78f));
+            CreateAircraftVisualPart("Left Wing Strut Front", aircraft.transform, new Vector3(-1.9f, 0.0f, 0.88f), new Vector3(0.12f, 1.65f, 0.12f), new Color(0.55f, 0.57f, 0.56f), new Vector3(0f, 0f, -28f));
+            CreateAircraftVisualPart("Right Wing Strut Front", aircraft.transform, new Vector3(1.9f, 0.0f, 0.88f), new Vector3(0.12f, 1.65f, 0.12f), new Color(0.55f, 0.57f, 0.56f), new Vector3(0f, 0f, 28f));
+            CreateAircraftVisualPart("Left Wing Strut Rear", aircraft.transform, new Vector3(-1.9f, 0.0f, -1.18f), new Vector3(0.12f, 1.65f, 0.12f), new Color(0.55f, 0.57f, 0.56f), new Vector3(0f, 0f, -28f));
+            CreateAircraftVisualPart("Right Wing Strut Rear", aircraft.transform, new Vector3(1.9f, 0.0f, -1.18f), new Vector3(0.12f, 1.65f, 0.12f), new Color(0.55f, 0.57f, 0.56f), new Vector3(0f, 0f, 28f));
             CreateAircraftPart("Tail", aircraft.transform, new Vector3(0f, 0.55f, -2.45f), new Vector3(3.2f, 0.16f, 0.85f), new Color(0.66f, 0.7f, 0.72f));
             CreateAircraftPart("Tail Vertical Fin", aircraft.transform, new Vector3(0f, 1.05f, -2.6f), new Vector3(0.24f, 1.2f, 0.85f), new Color(0.74f, 0.78f, 0.78f));
             CreateAircraftPart("Tail Fin Red Stripe", aircraft.transform, new Vector3(0f, 1.34f, -2.58f), new Vector3(0.28f, 0.24f, 0.9f), new Color(0.88f, 0.12f, 0.1f));
             CreateAircraftPart("Nose", aircraft.transform, new Vector3(0f, 0.05f, 2.95f), new Vector3(0.9f, 0.55f, 0.9f), new Color(0.95f, 0.48f, 0.36f));
+            CreateAircraftVisualPart("Propeller Hub", aircraft.transform, new Vector3(0f, 0.05f, 3.46f), new Vector3(0.42f, 0.42f, 0.2f), new Color(0.08f, 0.08f, 0.08f));
+            CreateAircraftVisualPart("Propeller Blade Horizontal", aircraft.transform, new Vector3(0f, 0.05f, 3.58f), new Vector3(2.15f, 0.12f, 0.08f), new Color(0.12f, 0.12f, 0.12f));
+            CreateAircraftVisualPart("Propeller Blade Vertical", aircraft.transform, new Vector3(0f, 0.05f, 3.59f), new Vector3(0.12f, 2.15f, 0.08f), new Color(0.12f, 0.12f, 0.12f));
             CreateAircraftPart("Cockpit Canopy", aircraft.transform, new Vector3(0f, 0.5f, 0.95f), new Vector3(1.0f, 0.3f, 0.95f), new Color(0.12f, 0.18f, 0.24f));
             CreateAircraftPart("Left Pontoon", aircraft.transform, new Vector3(-1.55f, -0.82f, 0.05f), new Vector3(0.55f, 0.32f, 4.8f), new Color(0.82f, 0.84f, 0.8f));
             CreateAircraftPart("Right Pontoon", aircraft.transform, new Vector3(1.55f, -0.82f, 0.05f), new Vector3(0.55f, 0.32f, 4.8f), new Color(0.82f, 0.84f, 0.8f));
@@ -380,15 +391,38 @@ namespace MINgo.EditorTools
             return box;
         }
 
-        private static void CreateAircraftPart(string name, Transform parent, Vector3 localPosition, Vector3 localScale, Color color)
+        private static GameObject CreateAircraftPart(string name, Transform parent, Vector3 localPosition, Vector3 localScale, Color color)
+        {
+            return CreateAircraftPart(name, parent, localPosition, localScale, color, Vector3.zero);
+        }
+
+        private static GameObject CreateAircraftPart(string name, Transform parent, Vector3 localPosition, Vector3 localScale, Color color, Vector3 localEulerAngles)
         {
             GameObject part = GameObject.CreatePrimitive(PrimitiveType.Cube);
             part.name = name;
             part.transform.SetParent(parent);
             part.transform.localPosition = localPosition;
-            part.transform.localRotation = Quaternion.identity;
+            part.transform.localRotation = Quaternion.Euler(localEulerAngles);
             part.transform.localScale = localScale;
             part.GetComponent<Renderer>().sharedMaterial = MakeMaterial(name + "_Mat", color);
+            return part;
+        }
+
+        private static void CreateAircraftVisualPart(string name, Transform parent, Vector3 localPosition, Vector3 localScale, Color color)
+        {
+            CreateAircraftVisualPart(name, parent, localPosition, localScale, color, Vector3.zero);
+        }
+
+        private static void CreateAircraftVisualPart(string name, Transform parent, Vector3 localPosition, Vector3 localScale, Color color, Vector3 localEulerAngles)
+        {
+            GameObject part = CreateAircraftPart(name, parent, localPosition, localScale, color, localEulerAngles);
+            Object.DestroyImmediate(part.GetComponent<Collider>());
+        }
+
+        private static void CreateAircraftPhysicsCollider(string name, Transform parent, Vector3 localPosition, Vector3 localScale)
+        {
+            GameObject part = CreateAircraftPart(name, parent, localPosition, localScale, new Color(0f, 0f, 0f, 0f));
+            part.GetComponent<Renderer>().enabled = false;
         }
 
         private static GameObject CreateLandingSurface(string name, SurfaceKind kind, Vector3 position, Vector3 scale, Color color)

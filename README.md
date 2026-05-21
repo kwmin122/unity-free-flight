@@ -21,6 +21,7 @@ The MVP is planned as vertical slices:
 15. In-air slowdown assist: holding S after throttle cut adds recoverable airbrake drag for landing approach.
 16. Close GTA-style chase camera: tighter aircraft framing, lower pullback, and narrower speed FOV.
 17. Imagegen world art pass: generated atlas texture applied to ocean, runway, road, fields, mountains, canyon, city blocks, and trees.
+18. Reference-driven seaplane details: high wing, pylon, wing struts, and propeller silhouette added to the playable blockout.
 
 Primary docs:
 

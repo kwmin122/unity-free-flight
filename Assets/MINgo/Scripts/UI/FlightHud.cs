@@ -103,7 +103,7 @@ namespace MINgo.UI
 
         public static string FormatControlHint()
         {
-            return "W/S throttle  A/D turn  Up/Down pitch  Q/E roll  Space brake";
+            return "W/S throttle  A/D turn  Up/Down pitch  Q/E roll  Space brake  R reset";
         }
 
         private void UpdateWarningText()

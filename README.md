@@ -11,7 +11,7 @@ The MVP is planned as vertical slices:
 5. Minimal HUD with landing context labels.
 6. Restricted airspace hazard with lock-on, missile evasion, damage, and emergency landing.
 7. Built-player MVP verification.
-8. GTA-like easy flight controls: W/S throttle, A/D assisted turn, Up/Down pitch, Q/E manual roll.
+8. GTA-like easy flight controls: W/S throttle, A/D assisted turn, Up/Down pitch, Q/E manual roll, R reset.
 
 Primary docs:
 

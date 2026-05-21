@@ -43,6 +43,7 @@ namespace MINgo.Tests
             Assert.That(hint, Does.Contain("W/S"));
             Assert.That(hint, Does.Contain("A/D"));
             Assert.That(hint, Does.Contain("Q/E"));
+            Assert.That(hint, Does.Contain("R"));
         }
     }
 }

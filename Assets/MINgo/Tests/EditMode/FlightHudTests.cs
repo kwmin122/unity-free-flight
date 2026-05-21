@@ -40,10 +40,11 @@ namespace MINgo.Tests
         {
             string hint = FlightHud.FormatControlHint();
 
-            Assert.That(hint, Does.Contain("W/S"));
+            Assert.That(hint, Does.Contain("W"));
+            Assert.That(hint, Does.Contain("S"));
             Assert.That(hint, Does.Contain("A/D"));
             Assert.That(hint, Does.Not.Contain("Q/E"));
-            Assert.That(hint, Does.Contain("R"));
+            Assert.That(hint, Does.Contain("Space"));
         }
     }
 }

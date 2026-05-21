@@ -54,7 +54,10 @@ namespace MINgo.Flight
             float manualRoll = Mathf.Clamp(input.Roll, -1f, 1f);
             float targetRoll = -turn * assistedBankAngleDegrees;
             float rollError = Mathf.DeltaAngle(currentRollDegrees, targetRoll);
-            float assistedRoll = Mathf.Clamp(-rollError / Mathf.Max(1f, bankResponseDegrees), -1f, 1f);
+            float response = Mathf.Max(1f, bankResponseDegrees);
+            float assistedRoll = Mathf.Abs(turn) > 0.05f
+                ? Mathf.Clamp(-rollError / response, -1f, 1f)
+                : 0f;
 
             if (Mathf.Abs(manualRoll) > 0.05f)
             {

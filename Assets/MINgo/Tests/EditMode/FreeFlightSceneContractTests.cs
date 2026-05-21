@@ -1,4 +1,5 @@
 using System.Linq;
+using MINgo.Audio;
 using MINgo.Flight;
 using MINgo.Hazards;
 using MINgo.Landing;
@@ -138,6 +139,33 @@ namespace MINgo.Tests
             Assert.That(objectNames, Does.Contain("Coastal Lighthouse"));
             Assert.That(objectNames, Does.Contain("Canyon Gate Beacon"));
             Assert.That(objectNames, Does.Contain("Ridge Summit Beacon"));
+        }
+
+        [Test]
+        public void SceneContainsModernOpenWorldMapDressing()
+        {
+            string[] objectNames = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
+                .Select(transform => transform.name)
+                .ToArray();
+
+            Assert.That(objectNames, Does.Contain("Downtown Glass Tower 0"));
+            Assert.That(objectNames, Does.Contain("Downtown Rooftop Helipad"));
+            Assert.That(objectNames, Does.Contain("Freeway Overpass"));
+            Assert.That(objectNames, Does.Contain("Beach Boardwalk"));
+            Assert.That(objectNames, Does.Contain("Marina Pier Main"));
+            Assert.That(objectNames, Does.Contain("Coastal Palm 0 Trunk"));
+            Assert.That(objectNames, Does.Contain("City Plaza Sculpture"));
+            Assert.That(objectNames, Does.Contain("Runway Threshold Marking North"));
+        }
+
+        [Test]
+        public void SceneContainsProceduralFlightAudioRig()
+        {
+            ProceduralFlightAudio audio = Object.FindAnyObjectByType<ProceduralFlightAudio>();
+
+            Assert.That(audio, Is.Not.Null);
+            Assert.That(audio.aircraft, Is.Not.Null);
+            Assert.That(GameObject.Find("Flight Audio Rig"), Is.Not.Null);
         }
 
         [Test]

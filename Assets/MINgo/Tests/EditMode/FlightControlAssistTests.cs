@@ -68,7 +68,7 @@ namespace MINgo.Tests
                 throttle01: 0.6f,
                 hasGroundContact: false);
 
-            Assert.That(output.Roll, Is.GreaterThan(0f));
+            Assert.That(output.Roll, Is.EqualTo(0f).Within(0.001f));
             Assert.That(output.Yaw, Is.EqualTo(0f).Within(0.001f));
         }
 

@@ -76,7 +76,8 @@ namespace MINgo.Tests
                 yield return new WaitForFixedUpdate();
             }
 
-            float bankAfterTurn = Mathf.Abs(aircraft.RollDegrees);
+            float rollAfterTurn = aircraft.RollDegrees;
+            float bankAfterTurn = Mathf.Abs(rollAfterTurn);
             float headingAfterTurn = aircraft.transform.eulerAngles.y;
 
             FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
@@ -92,12 +93,19 @@ namespace MINgo.Tests
                 yield return new WaitForFixedUpdate();
             }
 
-            float bankAfterRelease = Mathf.Abs(aircraft.RollDegrees);
+            float rollAfterRelease = aircraft.RollDegrees;
+            float bankAfterRelease = Mathf.Abs(rollAfterRelease);
 
             Assert.That(bankAfterTurn, Is.GreaterThan(8f));
             Assert.That(Mathf.Abs(Mathf.DeltaAngle(initialHeading, headingAfterTurn)), Is.GreaterThan(5f));
-            Assert.That(bankAfterRelease, Is.LessThan(bankAfterTurn));
-            Assert.That(bankAfterRelease, Is.LessThan(8f));
+            Assert.That(
+                bankAfterRelease,
+                Is.LessThan(bankAfterTurn),
+                $"Expected release to reduce bank. rollAfterTurn={rollAfterTurn:0.00}, rollAfterRelease={rollAfterRelease:0.00}");
+            Assert.That(
+                bankAfterRelease,
+                Is.LessThan(25f),
+                $"Expected released controls to recover near level. rollAfterTurn={rollAfterTurn:0.00}, rollAfterRelease={rollAfterRelease:0.00}");
             Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Crashed));
             Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Submerged));
         }

@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using MINgo.Audio;
 using MINgo.Flight;
 using MINgo.Hazards;
 using MINgo.Landing;
@@ -55,6 +56,7 @@ namespace MINgo.EditorTools
             camera.farClipPlane = 2600f;
             cameraObject.transform.position = new Vector3(0f, 18f, -38f);
             cameraObject.transform.rotation = Quaternion.Euler(18f, 0f, 0f);
+            cameraObject.AddComponent<AudioListener>();
 
             GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
             ground.name = "Flight Reference Ground";
@@ -92,6 +94,7 @@ namespace MINgo.EditorTools
             CreateWorldBounds(aircraft);
             FlightHud hud = CreateHud(aircraft);
             CreateRestrictedAirspace(aircraft, hud);
+            CreateFlightAudio(aircraft);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddSceneToBuildSettings(ScenePath);
@@ -101,10 +104,14 @@ namespace MINgo.EditorTools
         {
             CreateLandingSurface("Runway", SurfaceKind.Runway, Vector3.zero, new Vector3(18f, 0.25f, 220f), new Color(0.19f, 0.2f, 0.2f));
             CreateBlock("Runway Centerline", new Vector3(0f, 0.16f, 10f), new Vector3(1.2f, 0.03f, 170f), new Color(0.92f, 0.9f, 0.78f));
+            CreateBlock("Runway Threshold Marking North", new Vector3(0f, 0.19f, 92f), new Vector3(14f, 0.03f, 2f), new Color(0.95f, 0.93f, 0.84f));
+            CreateBlock("Runway Threshold Marking South", new Vector3(0f, 0.19f, -92f), new Vector3(14f, 0.03f, 2f), new Color(0.95f, 0.93f, 0.84f));
             CreateBlock("Airport Apron", new Vector3(-34f, 0f, -40f), new Vector3(58f, 0.16f, 58f), new Color(0.25f, 0.26f, 0.25f));
             CreateBlock("Hangar West", new Vector3(-72f, 6f, -70f), new Vector3(34f, 12f, 24f), new Color(0.48f, 0.52f, 0.54f));
             CreateBlock("Hangar East", new Vector3(-70f, 5f, -20f), new Vector3(28f, 10f, 20f), new Color(0.42f, 0.47f, 0.5f));
             CreateBlock("Control Tower", new Vector3(36f, 20f, -30f), new Vector3(8f, 40f, 8f), new Color(0.7f, 0.75f, 0.72f));
+            CreateBlock("Airport Glass Terminal", new Vector3(-42f, 6f, 28f), new Vector3(48f, 12f, 16f), new Color(0.42f, 0.55f, 0.62f));
+            CreateBlock("Airport Terminal Window Strip", new Vector3(-42f, 9f, 36.3f), new Vector3(44f, 3f, 0.5f), new Color(0.14f, 0.28f, 0.42f));
         }
 
         private static void CreateCoastline()
@@ -113,6 +120,16 @@ namespace MINgo.EditorTools
             ocean.GetComponent<Collider>().isTrigger = true;
             CreateLandingSurface("Beach Emergency Strip", SurfaceKind.Field, new Vector3(310f, 0.03f, 330f), new Vector3(44f, 0.14f, 300f), new Color(0.76f, 0.68f, 0.48f));
             CreateBlock("Beach Sand Band", new Vector3(355f, -0.01f, 520f), new Vector3(95f, 0.1f, 1120f), new Color(0.69f, 0.62f, 0.43f));
+            CreateLandingSurface("Beach Boardwalk", SurfaceKind.Road, new Vector3(335f, 0.08f, 300f), new Vector3(8f, 0.18f, 260f), new Color(0.55f, 0.42f, 0.27f));
+            CreateLandingSurface("Marina Pier Main", SurfaceKind.Road, new Vector3(455f, 0.08f, 430f), new Vector3(120f, 0.18f, 8f), new Color(0.48f, 0.38f, 0.26f));
+            CreateBlock("Marina Pier Finger 0", new Vector3(500f, 0.11f, 402f), new Vector3(8f, 0.16f, 48f), new Color(0.47f, 0.37f, 0.25f));
+            CreateBlock("Marina Pier Finger 1", new Vector3(532f, 0.11f, 458f), new Vector3(8f, 0.16f, 48f), new Color(0.47f, 0.37f, 0.25f));
+            CreateBlock("Marina White Yacht", new Vector3(526f, 1.1f, 402f), new Vector3(22f, 2.2f, 5f), new Color(0.88f, 0.9f, 0.86f));
+            CreateBlock("Marina Red Speedboat", new Vector3(555f, 0.9f, 459f), new Vector3(14f, 1.8f, 4f), new Color(0.75f, 0.12f, 0.12f));
+            CreatePalmTree("Coastal Palm 0", new Vector3(328f, 0.2f, 210f));
+            CreatePalmTree("Coastal Palm 1", new Vector3(330f, 0.2f, 265f));
+            CreatePalmTree("Coastal Palm 2", new Vector3(330f, 0.2f, 342f));
+            CreatePalmTree("Coastal Palm 3", new Vector3(330f, 0.2f, 410f));
         }
 
         private static void CreateRoads()
@@ -120,6 +137,13 @@ namespace MINgo.EditorTools
             CreateLandingSurface("Coastal Road", SurfaceKind.Road, new Vector3(210f, 0.04f, 360f), new Vector3(10f, 0.16f, 560f), new Color(0.12f, 0.13f, 0.14f));
             GameObject airportRoad = CreateLandingSurface("Airport Service Road", SurfaceKind.Road, new Vector3(83f, 0.04f, 70f), new Vector3(12f, 0.16f, 230f), new Color(0.1f, 0.11f, 0.12f));
             airportRoad.transform.rotation = Quaternion.Euler(0f, -22f, 0f);
+            GameObject overpass = CreateLandingSurface("Freeway Overpass", SurfaceKind.Road, new Vector3(95f, 8f, 540f), new Vector3(18f, 0.28f, 220f), new Color(0.13f, 0.14f, 0.15f));
+            overpass.transform.rotation = Quaternion.Euler(0f, 34f, 0f);
+            CreateBlock("Freeway Overpass Support 0", new Vector3(58f, 4f, 474f), new Vector3(5f, 8f, 5f), new Color(0.42f, 0.43f, 0.4f));
+            CreateBlock("Freeway Overpass Support 1", new Vector3(92f, 4f, 532f), new Vector3(5f, 8f, 5f), new Color(0.42f, 0.43f, 0.4f));
+            CreateBlock("Freeway Overpass Support 2", new Vector3(126f, 4f, 590f), new Vector3(5f, 8f, 5f), new Color(0.42f, 0.43f, 0.4f));
+            CreateBlock("Coastal Road Lane Stripe 0", new Vector3(210f, 0.16f, 220f), new Vector3(1f, 0.03f, 70f), new Color(0.9f, 0.86f, 0.55f));
+            CreateBlock("Coastal Road Lane Stripe 1", new Vector3(210f, 0.16f, 390f), new Vector3(1f, 0.03f, 70f), new Color(0.9f, 0.86f, 0.55f));
         }
 
         private static void CreateFields()
@@ -127,6 +151,8 @@ namespace MINgo.EditorTools
             CreateLandingSurface("Open Field", SurfaceKind.Field, new Vector3(-115f, 0.02f, 260f), new Vector3(150f, 0.14f, 150f), new Color(0.28f, 0.48f, 0.27f));
             CreateLandingSurface("Long Meadow", SurfaceKind.Field, new Vector3(-220f, 0.02f, 165f), new Vector3(95f, 0.14f, 250f), new Color(0.34f, 0.55f, 0.3f));
             CreateBlock("Field Tree Line", new Vector3(-40f, 5f, 360f), new Vector3(12f, 10f, 170f), new Color(0.14f, 0.28f, 0.15f));
+            CreateTreeCluster("Meadow Tree Cluster 0", new Vector3(-180f, 0.1f, 320f));
+            CreateTreeCluster("Meadow Tree Cluster 1", new Vector3(-72f, 0.1f, 228f));
         }
 
         private static void CreateCityEdge()
@@ -143,6 +169,24 @@ namespace MINgo.EditorTools
             }
 
             CreateBlock("City Edge Marker Tower", new Vector3(166f, 31f, 515f), new Vector3(14f, 62f, 14f), new Color(0.56f, 0.58f, 0.6f));
+            CreateModernDowntown();
+        }
+
+        private static void CreateModernDowntown()
+        {
+            CreateBlock("Downtown Glass Tower 0", new Vector3(92f, 36f, 462f), new Vector3(18f, 72f, 18f), new Color(0.32f, 0.48f, 0.58f));
+            CreateBlock("Downtown Glass Tower 0 Window Band A", new Vector3(92f, 50f, 471.3f), new Vector3(16f, 2f, 0.5f), new Color(0.12f, 0.23f, 0.32f));
+            CreateBlock("Downtown Glass Tower 0 Window Band B", new Vector3(92f, 34f, 471.3f), new Vector3(16f, 2f, 0.5f), new Color(0.12f, 0.23f, 0.32f));
+            CreateBlock("Downtown Rooftop Helipad", new Vector3(92f, 72.4f, 462f), new Vector3(20f, 0.6f, 20f), new Color(0.12f, 0.14f, 0.15f));
+            CreateBlock("Downtown Helipad Marking", new Vector3(92f, 72.8f, 462f), new Vector3(12f, 0.08f, 1.4f), new Color(0.92f, 0.9f, 0.76f));
+            CreateBlock("Downtown Glass Tower 1", new Vector3(132f, 48f, 438f), new Vector3(22f, 96f, 16f), new Color(0.28f, 0.42f, 0.54f));
+            CreateBlock("Downtown Glass Tower 2", new Vector3(158f, 31f, 472f), new Vector3(16f, 62f, 22f), new Color(0.36f, 0.48f, 0.5f));
+            CreateBlock("Downtown Luxury Condo", new Vector3(62f, 24f, 430f), new Vector3(26f, 48f, 18f), new Color(0.62f, 0.63f, 0.58f));
+            CreateBlock("City Plaza", new Vector3(96f, 0.09f, 410f), new Vector3(70f, 0.18f, 42f), new Color(0.34f, 0.35f, 0.33f));
+            CreateBlock("City Plaza Sculpture", new Vector3(96f, 9f, 410f), new Vector3(4f, 18f, 4f), new Color(0.86f, 0.82f, 0.68f));
+            CreateBlock("City Plaza Sculpture Crossbar", new Vector3(96f, 15f, 410f), new Vector3(20f, 3f, 3f), new Color(0.86f, 0.82f, 0.68f));
+            CreateBlock("City Retail Pod 0", new Vector3(65f, 3f, 396f), new Vector3(16f, 6f, 10f), new Color(0.45f, 0.42f, 0.38f));
+            CreateBlock("City Retail Pod 1", new Vector3(127f, 3f, 396f), new Vector3(16f, 6f, 10f), new Color(0.46f, 0.43f, 0.39f));
         }
 
         private static void CreateMountainRidge()
@@ -192,6 +236,24 @@ namespace MINgo.EditorTools
             CreateBlock(name + " Cap", basePosition + Vector3.up * (height + 7f), new Vector3(18f, 2.5f, 18f), new Color(0.12f, 0.13f, 0.12f));
         }
 
+        private static void CreatePalmTree(string name, Vector3 basePosition)
+        {
+            CreateCylinderBlock(name + " Trunk", basePosition + new Vector3(0f, 5f, 0f), new Vector3(0.8f, 5f, 0.8f), new Color(0.46f, 0.31f, 0.18f), WorldAtlasTile.Trees);
+            CreateBlock(name + " Crown A", basePosition + new Vector3(0f, 10.6f, 0f), new Vector3(8f, 1.4f, 2f), new Color(0.12f, 0.34f, 0.16f));
+            CreateBlock(name + " Crown B", basePosition + new Vector3(0f, 10.7f, 0f), new Vector3(2f, 1.4f, 8f), new Color(0.12f, 0.34f, 0.16f));
+            CreateBlock(name + " Crown C", basePosition + new Vector3(0f, 10.4f, 0f), new Vector3(6f, 1.1f, 6f), new Color(0.1f, 0.28f, 0.12f));
+        }
+
+        private static void CreateTreeCluster(string name, Vector3 basePosition)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                Vector3 offset = new Vector3(i * 5f, 0f, (i % 2) * 6f);
+                CreateCylinderBlock(name + " Trunk " + i, basePosition + offset + new Vector3(0f, 3.2f, 0f), new Vector3(1.1f, 3.2f, 1.1f), new Color(0.34f, 0.23f, 0.13f), WorldAtlasTile.Trees);
+                CreateSphereBlock(name + " Canopy " + i, basePosition + offset + new Vector3(0f, 8f, 0f), new Vector3(7f, 5f, 7f), new Color(0.1f, 0.31f, 0.14f), WorldAtlasTile.Trees);
+            }
+        }
+
         private static void CreateWorldBounds(GameObject aircraft)
         {
             var boundsObject = new GameObject("World Bounds");
@@ -200,6 +262,16 @@ namespace MINgo.EditorTools
             bounds.waterFailureHeight = -2f;
             bounds.resetPosition = new Vector3(0f, 2f, -65f);
             bounds.resetEulerAngles = Vector3.zero;
+        }
+
+        private static void CreateFlightAudio(GameObject aircraft)
+        {
+            var audioObject = new GameObject("Flight Audio Rig");
+            audioObject.transform.position = aircraft.transform.position;
+            audioObject.transform.SetParent(aircraft.transform, true);
+
+            var audio = audioObject.AddComponent<ProceduralFlightAudio>();
+            audio.aircraft = aircraft.GetComponent<ArcadeAircraftController>();
         }
 
         private static GameObject CreateAircraft()
@@ -243,7 +315,12 @@ namespace MINgo.EditorTools
             CreateAircraftPart("Left Float Strut Rear", aircraft.transform, new Vector3(-0.78f, -0.45f, -1.45f), new Vector3(0.12f, 0.85f, 0.12f), new Color(0.55f, 0.57f, 0.56f));
             CreateAircraftPart("Right Float Strut Rear", aircraft.transform, new Vector3(0.78f, -0.45f, -1.45f), new Vector3(0.12f, 0.85f, 0.12f), new Color(0.55f, 0.57f, 0.56f));
 
-            aircraft.AddComponent<ArcadeAircraftController>();
+            var controller = aircraft.AddComponent<ArcadeAircraftController>();
+            controller.stabilization = 4.5f;
+            controller.autoLevel = 6f;
+            controller.autoLevelRotationRate = 2f;
+            controller.assistedBankAngle = 22f;
+            controller.throttleChangeRate = 3.2f;
             aircraft.AddComponent<LandingStateMachine>();
             return aircraft;
         }
@@ -452,6 +529,32 @@ namespace MINgo.EditorTools
             return block;
         }
 
+        private static GameObject CreateCylinderBlock(string name, Vector3 position, Vector3 scale, Color color, WorldAtlasTile tile)
+        {
+            GameObject block = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            block.name = name;
+            block.transform.position = position;
+            block.transform.localScale = scale;
+            block.GetComponent<Renderer>().sharedMaterial = MakeAtlasMaterial(
+                name.Replace(" ", "_") + "_Mat",
+                color,
+                tile);
+            return block;
+        }
+
+        private static GameObject CreateSphereBlock(string name, Vector3 position, Vector3 scale, Color color, WorldAtlasTile tile)
+        {
+            GameObject block = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            block.name = name;
+            block.transform.position = position;
+            block.transform.localScale = scale;
+            block.GetComponent<Renderer>().sharedMaterial = MakeAtlasMaterial(
+                name.Replace(" ", "_") + "_Mat",
+                color,
+                tile);
+            return block;
+        }
+
         private static WorldAtlasTile GetSurfaceTile(SurfaceKind kind)
         {
             return kind switch
@@ -468,12 +571,12 @@ namespace MINgo.EditorTools
 
         private static WorldAtlasTile GetBlockTile(string name)
         {
-            if (name.Contains("City") || name.Contains("Hangar") || name.Contains("Tower") || name.Contains("Barracks"))
+            if (name.Contains("City") || name.Contains("Hangar") || name.Contains("Tower") || name.Contains("Barracks") || name.Contains("Terminal") || name.Contains("Downtown") || name.Contains("Condo") || name.Contains("Retail") || name.Contains("Window"))
             {
                 return WorldAtlasTile.Building;
             }
 
-            if (name.Contains("Tree"))
+            if (name.Contains("Tree") || name.Contains("Palm") || name.Contains("Crown") || name.Contains("Canopy"))
             {
                 return WorldAtlasTile.Trees;
             }
@@ -488,7 +591,7 @@ namespace MINgo.EditorTools
                 return WorldAtlasTile.Mountain;
             }
 
-            if (name.Contains("Road") || name.Contains("Runway") || name.Contains("Apron"))
+            if (name.Contains("Road") || name.Contains("Runway") || name.Contains("Apron") || name.Contains("Freeway") || name.Contains("Boardwalk") || name.Contains("Pier"))
             {
                 return WorldAtlasTile.Runway;
             }

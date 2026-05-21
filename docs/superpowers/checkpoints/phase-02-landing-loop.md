@@ -11,7 +11,7 @@ Automated tests:
 - RED: `MINgo.Landing` missing compile failure after test assembly setup.
 - GREEN: `MINgo.EditMode` filtered run passed 5/5.
 - Command: `Unity -batchmode -projectPath ... -runTests -testPlatform EditMode -assemblyNames MINgo.EditMode -testResults Builds/TestResults/editmode-phase-02-mingo.xml`
-- Note: unfiltered EditMode also runs embedded MCP Unity package tests, where 7 package-owned tests fail independently of MINgo.
+- Follow-up 2026-05-21: the embedded MCP Unity batch-mode registry bug was fixed; full unfiltered EditMode now passes in `Builds/TestResults/editmode-unfiltered-green.xml`.
 
 Built-player checks:
 - Build path: `Builds/macOS/MINgo.app`

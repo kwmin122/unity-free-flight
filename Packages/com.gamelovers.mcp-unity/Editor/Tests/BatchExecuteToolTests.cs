@@ -57,6 +57,16 @@ namespace McpUnity.Tests
             Assert.IsTrue(_batchTool.Description.Contains("batch"), "Description should mention batch");
         }
 
+        [Test]
+        public void McpUnityServer_InstanceProvidesToolsInBatchMode()
+        {
+            McpUnityServer server = McpUnityServer.Instance;
+
+            Assert.IsNotNull(server, "BatchExecuteTool tests need a server tool registry in batch mode");
+            Assert.IsTrue(server.TryGetTool("get_scene_info", out McpToolBase tool));
+            Assert.IsNotNull(tool);
+        }
+
         #endregion
 
         #region Validation Tests

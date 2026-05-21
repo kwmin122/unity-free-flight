@@ -62,18 +62,14 @@ namespace McpUnity.Unity
         }
         
         /// <summary>
-        /// Singleton instance accessor. Returns null in batch mode.
+        /// Singleton instance accessor.
+        /// In batch mode this creates a lightweight instance with editor tools registered,
+        /// but without installing or starting the Node/WebSocket server.
         /// </summary>
         public static McpUnityServer Instance
         {
             get
             {
-                // Don't create instance in batch mode to avoid hanging builds
-                if (Application.isBatchMode)
-                {
-                    return null;
-                }
-                
                 if (_instance == null)
                 {
                     _instance = new McpUnityServer();
@@ -99,11 +95,14 @@ namespace McpUnity.Unity
         /// </summary>
         private McpUnityServer()
         {
-            // Skip all initialization in batch mode (Unity Cloud Build, CI, headless builds)
-            // The npm install/build commands can hang indefinitely without node.js available
+            // In batch mode, keep the in-process tool registry available for tests and
+            // headless editor tool calls, but skip Node/WebSocket setup that can hang CI.
             if (Application.isBatchMode)
             {
-                McpLogger.LogInfo("MCP Unity server disabled: Running in batch mode (Unity Cloud Build or CI)");
+                McpLogger.LogInfo("MCP Unity Node/WebSocket server disabled: Running in batch mode (Unity Cloud Build or CI)");
+                InitializeServices();
+                RegisterResources();
+                RegisterTools();
                 return;
             }
             

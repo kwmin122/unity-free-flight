@@ -5,6 +5,7 @@ Result: PASS for greybox world structure, tests, and build.
 
 Automated tests:
 - `MINgo.EditMode` filtered run: 7/7 passed.
+- Full unfiltered EditMode follow-up: 63/63 passed after the MCP Unity batch-mode registry fix.
 - Covered landing classifier rules and `WorldBounds.IsBelowFailureHeight`.
 - Result file: `Builds/TestResults/editmode-phase-03-mingo.xml`.
 

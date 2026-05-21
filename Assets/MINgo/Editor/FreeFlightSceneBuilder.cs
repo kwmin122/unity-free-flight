@@ -219,6 +219,7 @@ namespace MINgo.EditorTools
             hud.altitudeText = CreateHudText("Altitude", canvasObject.transform, new Vector2(28f, -58f), 22, Color.white);
             hud.stateText = CreateHudText("State", canvasObject.transform, new Vector2(28f, -88f), 22, Color.white);
             hud.contextText = CreateHudText("Landing Context", canvasObject.transform, new Vector2(28f, -132f), 28, new Color(1f, 0.91f, 0.58f));
+            hud.reticleText = CreateReticleText(canvasObject.transform);
             hud.warningText = CreateHudText("Restricted Warning", canvasObject.transform, new Vector2(0f, -96f), 30, new Color(1f, 0.42f, 0.32f));
             hud.warningText.alignment = TextAnchor.UpperCenter;
             hud.warningText.rectTransform.anchorMin = new Vector2(0.5f, 1f);
@@ -227,6 +228,23 @@ namespace MINgo.EditorTools
             hud.warningText.rectTransform.sizeDelta = new Vector2(720f, 42f);
             hud.warningText.enabled = false;
             return hud;
+        }
+
+        private static Text CreateReticleText(Transform parent)
+        {
+            Text reticle = CreateHudText("Flight Reticle", parent, Vector2.zero, 34, new Color(1f, 1f, 1f, 0.8f));
+            reticle.text = "+";
+            reticle.alignment = TextAnchor.MiddleCenter;
+            reticle.raycastTarget = false;
+
+            RectTransform rect = reticle.rectTransform;
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = new Vector2(0f, 0f);
+            rect.sizeDelta = new Vector2(52f, 52f);
+
+            return reticle;
         }
 
         private static Text CreateHudText(string name, Transform parent, Vector2 anchoredPosition, int fontSize, Color color)

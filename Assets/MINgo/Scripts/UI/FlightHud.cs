@@ -15,6 +15,7 @@ namespace MINgo.UI
         public Text stateText;
         public Text contextText;
         public Text warningText;
+        public Text reticleText;
         public float contextVisibleSeconds = 4f;
 
         private LandingContext lastContext = LandingContext.None;

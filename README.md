@@ -13,6 +13,7 @@ The MVP is planned as vertical slices:
 7. Built-player MVP verification.
 8. GTA-like easy flight controls: W/S throttle, A/D assisted turn, Up/Down pitch, Q/E manual roll, R reset.
 9. Seaplane blockout silhouette with pontoons, struts, cockpit canopy, and red-white reference colors.
+10. Center flight reticle for GTA-like forward reference.
 
 Primary docs:
 

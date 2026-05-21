@@ -1,6 +1,7 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using MINgo.Flight;
+using MINgo.Landing;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -43,11 +44,14 @@ namespace MINgo.EditorTools
             ground.transform.localScale = new Vector3(2000f, 0.08f, 2000f);
             ground.GetComponent<Renderer>().sharedMaterial = MakeMaterial("Flight_Reference_Ground_Mat", new Color(0.36f, 0.52f, 0.4f));
 
-            GameObject runway = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            runway.name = "Runway";
-            runway.transform.position = Vector3.zero;
-            runway.transform.localScale = new Vector3(18f, 0.25f, 180f);
-            runway.GetComponent<Renderer>().sharedMaterial = MakeMaterial("Runway_Mat", new Color(0.19f, 0.2f, 0.2f));
+            CreateLandingSurface("Runway", SurfaceKind.Runway, Vector3.zero, new Vector3(18f, 0.25f, 180f), new Color(0.19f, 0.2f, 0.2f));
+            CreateLandingSurface("Coastal Road", SurfaceKind.Road, new Vector3(70f, 0.02f, 230f), new Vector3(10f, 0.16f, 320f), new Color(0.12f, 0.13f, 0.14f));
+            CreateLandingSurface("Open Field", SurfaceKind.Field, new Vector3(-95f, 0.01f, 260f), new Vector3(120f, 0.14f, 130f), new Color(0.28f, 0.48f, 0.27f));
+            GameObject ridge = CreateLandingSurface("Ridge Landing Shelf", SurfaceKind.Ridge, new Vector3(-260f, 22f, 520f), new Vector3(95f, 0.3f, 46f), new Color(0.39f, 0.37f, 0.32f));
+            ridge.transform.rotation = Quaternion.Euler(0f, 8f, 12f);
+            CreateLandingSurface("Canyon Floor", SurfaceKind.CanyonFloor, new Vector3(250f, 0.03f, 610f), new Vector3(58f, 0.14f, 260f), new Color(0.46f, 0.34f, 0.24f));
+            GameObject ocean = CreateLandingSurface("Ocean", SurfaceKind.Water, new Vector3(610f, -0.05f, 520f), new Vector3(620f, 1f, 1400f), new Color(0.12f, 0.33f, 0.58f));
+            ocean.GetComponent<Collider>().isTrigger = true;
 
             GameObject aircraft = CreateAircraft();
             var cameraRig = cameraObject.AddComponent<ChaseCameraRig>();
@@ -73,6 +77,7 @@ namespace MINgo.EditorTools
             CreateAircraftPart("Nose", aircraft.transform, new Vector3(0f, 0.05f, 2.95f), new Vector3(0.9f, 0.55f, 0.9f), new Color(0.95f, 0.48f, 0.36f));
 
             aircraft.AddComponent<ArcadeAircraftController>();
+            aircraft.AddComponent<LandingStateMachine>();
             return aircraft;
         }
 
@@ -85,6 +90,17 @@ namespace MINgo.EditorTools
             part.transform.localRotation = Quaternion.identity;
             part.transform.localScale = localScale;
             part.GetComponent<Renderer>().sharedMaterial = MakeMaterial(name + "_Mat", color);
+        }
+
+        private static GameObject CreateLandingSurface(string name, SurfaceKind kind, Vector3 position, Vector3 scale, Color color)
+        {
+            GameObject surface = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            surface.name = name;
+            surface.transform.position = position;
+            surface.transform.localScale = scale;
+            surface.GetComponent<Renderer>().sharedMaterial = MakeMaterial(name.Replace(" ", "_") + "_Mat", color);
+            surface.AddComponent<SurfaceTag>().kind = kind;
+            return surface;
         }
 
         private static Material MakeMaterial(string name, Color color)

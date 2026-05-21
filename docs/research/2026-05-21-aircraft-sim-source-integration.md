@@ -15,8 +15,14 @@ Copyright boundary: do not paste full blog text, full subtitles, or copied sourc
 - Naver #3 programming linked by the intro: https://blog.naver.com/wjoh0315/222132555948
 - YouTube reference from the supplied links: https://www.youtube.com/watch?v=p3jDJ9FtTyM
 - GitHub repo linked by the Naver intro: https://github.com/wjoh0315/AerocraftSimulator
+- YouTube reference supplied on 2026-05-21: https://www.youtube.com/watch?v=7vAHo2B1zLc
+- Original blog post linked from that video: https://vazgriz.com/346/flight-simulator-in-unity3d-part-1/
+- GitHub repo linked from that video/blog: https://github.com/vazgriz/FlightSim
+- Playable reference linked from that video: https://vazgriz.itch.io/flight-sim-part-1
 
 YouTube captions were checked from the available English subtitle track. Local inspection converted it into 147 timestamped caption rows for review, but the full transcript is not committed.
+
+The 7vAHo2B1zLc video had no manual subtitle track available. Local inspection used the English automatic caption track and converted it into 601 timestamped caption rows for review. The full auto transcript is not committed. The linked `vazgriz/FlightSim` repo was also checked at tag `part-1`; it is MIT licensed, but MINgo still uses it as a reference pattern rather than copying architecture or assets.
 
 ## Source To Implementation Map
 
@@ -107,6 +113,42 @@ Apply all major timestamp blocks:
 - 06:35-07:15: Useful surface parameters include lift slope, skin friction, zero-lift angle, stall angle, flap fraction, and aspect ratio. Keep these as future tuning names.
 - 07:17-08:33: Apply force and torque to a Rigidbody, including torque from force application offset. Future aircraft surfaces should use this.
 - 08:33-09:49: Physics update jitter can happen because forces update only once per physics tick. If MINgo jitters after real aerodynamics, add a cheap prediction/substep pass before changing global physics timestep.
+
+### YouTube Captions: Creating A Flight Simulator In Unity3D Part 1
+
+Apply every major timestamp block as implementation constraints:
+
+- 00:00-01:20: The target feel sits between Ace Combat/Project Wingman arcade and DCS-level simulation. MINgo should remain accessible, but the aircraft must create reasons to manage speed, altitude, and turn energy. Do not bury this under mission complexity.
+- 01:22-02:06: Treat forces as imbalances: thrust against drag, lift against gravity, and turning from force/torque imbalance. Keep this readable in code rather than directly rotating transforms.
+- 02:06-03:21: Lift depends on speed and angle of attack. The current arcade lift can stay for MVP, but Phase 6+ should replace it with local-velocity angle-of-attack measurement and a curve-driven lift coefficient.
+- 03:23-03:39: Flaps are a low-speed takeoff/landing tool because they add lift and drag. This becomes a later landing-feel control, not a Phase 2 requirement.
+- 03:36-03:57: Induced drag makes hard turns cost speed. This matters for canyon/ridge routes because repeated low-altitude turns should naturally create energy pressure.
+- 03:54-05:25: Aileron, rudder, and elevator/stabilator visuals should eventually come from separate pivoted control-surface nodes. Current direct torque is acceptable while the blockout aircraft is still a toy.
+- 05:41-07:22: High-speed turning needs a G limiter so control does not scale forever with speed. Future advanced flight should cap effective input by predicted G load, with different pitch-up and pitch-down limits.
+- 07:24-07:45: The implementation principle is to fake as much as possible with simple formulas and hand-tuned parameters. This supports the current MINgo direction: small scripts, tunable forces, and playtest-driven values.
+- 07:47-08:20: The update loop should measure state in the aircraft local frame first: world velocity, local velocity, local angular velocity, pitch AOA, yaw AOA, and G force from velocity delta.
+- 08:20-08:33: Thrust is throttle `0..1` multiplied by max thrust and applied as Rigidbody force. Phase 1 already follows this pattern.
+- 08:42-10:23: Do not rely on Unity Rigidbody drag for final flight feel. Use velocity squared times hand-tuned directional drag coefficients, with extra forward drag when airbrakes or flaps are active.
+- 10:27-13:53: Lift can ignore air density and surface area for this game. Use velocity squared, an AOA coefficient curve, a lift-power tuning scalar, and induced drag based on the squared lift coefficient. Project velocity onto the lift plane so sideways flow does not create fake wing lift.
+- 13:58-15:45: Steering can be faked by applying torque directly to the center of mass. Convert player input into target angular velocity, limit by turn acceleration, and reduce steering power at low speed.
+- 15:46-16:06: If induced drag is missing, the aircraft can turn without paying speed. This is the exact failure mode to avoid once MINgo adds canyon time-attack style routes.
+- 16:06-19:12: G limiting is predictive: estimate future G from angular velocity crossed with velocity, derive directional G limits, and scale player input by a `0..1` limiter value rather than abruptly clamping controls.
+- 19:18-20:15: Energy management is kinetic speed plus potential altitude. Drag and induced drag remove speed; climbing stores energy as altitude; diving turns altitude back into speed; engines are the only net energy source.
+- 20:17-20:27: Corner speed emerges where low-speed control authority and high-speed G limit meet. MINgo should tune toward a readable sweet spot instead of equally strong turning at all speeds.
+- 20:32-21:12: Low induced drag makes a loose arcade aircraft. Higher induced drag makes a fast straight-line aircraft that bleeds speed in turns. This is a future tuning lever for making the mountain/canyon route feel dangerous.
+- 21:17-21:32: The linked repo and playable build are reference material. Use the patterns, not the asset package, because MINgo must keep its own one-scene free-landing sandbox scope.
+
+### Vazgriz Blog / Repo Reference
+
+Use observed patterns as validated implementation guidance:
+
+- The blog explicitly names the target systems we should eventually model: drag, lift, angle of attack, induced drag, G-force/G limiter, corner speed, and energy management.
+- The repo groups aircraft tuning by lift, steering, drag, and misc landing/graphics fields. MINgo should preserve that grouping when `ArcadeAircraftController` grows or when a separate `FlightAerodynamics` script is introduced.
+- The repo measures `Velocity`, `LocalVelocity`, `LocalAngularVelocity`, AOA, yaw AOA, and local G force before applying forces. MINgo should add these debug outputs before replacing the arcade lift model.
+- The repo applies thrust, lift, steering, drag, and angular drag in `FixedUpdate`. This matches MINgo's current physics loop and confirms that Phase 2 landing should not move physics to `Update`.
+- The repo's steering is intentionally fake and stable: target angular velocity plus acceleration-limited correction. This is the right direction for MINgo; a full per-surface torque sim is unnecessary for MVP.
+- The repo has landing gear colliders and braking material, but no free-surface landing classifier. MINgo's Phase 2 should therefore add our own surface-tag classification instead of borrowing a crash-only landing model.
+- The repo HUD uses speed, AOA, G-force, boresight, and velocity marker. MINgo Phase 4 should start with speed/altitude/state/context, then add AOA/G/velocity marker only after the flight model exposes those values.
 
 ### GitHub Reference Repo
 

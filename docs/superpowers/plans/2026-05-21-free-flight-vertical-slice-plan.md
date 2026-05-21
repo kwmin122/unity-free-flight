@@ -21,6 +21,7 @@
 - Do not copy full blog text, subtitles, or unlicensed source code into this project.
 - Convert every source section into our own code structure, tuning target, phase checklist, or verification criterion.
 - Preserve MINgo's scope: arcade-first free landing sandbox, restricted-airspace hazard, no player weapon system in the MVP.
+- Unity Test Framework 1.6 command-line test runs must not include `-quit`; the test runner exits the editor after completion. Filter MINgo tests with `-assemblyNames MINgo.EditMode` so embedded MCP package tests do not contaminate phase verification.
 
 ## Planning Assumptions
 
@@ -400,9 +401,9 @@ Expected command:
   -batchmode \
   -projectPath "/Users/a0000/Library/Mobile Documents/com~apple~CloudDocs/Desktop/dev/MINgo" \
   -runTests \
-  -testPlatform editmode \
-  -testResults "Builds/TestResults/editmode-phase-02.xml" \
-  -quit
+  -testPlatform EditMode \
+  -assemblyNames MINgo.EditMode \
+  -testResults "Builds/TestResults/editmode-phase-02.xml"
 ```
 
 Expected before implementation: tests fail because landing types do not exist yet.
@@ -767,9 +768,9 @@ Create `docs/superpowers/checkpoints/phase-05-restricted-airspace.md`.
   -batchmode \
   -projectPath "/Users/a0000/Library/Mobile Documents/com~apple~CloudDocs/Desktop/dev/MINgo" \
   -runTests \
-  -testPlatform editmode \
-  -testResults "Builds/TestResults/editmode-mvp.xml" \
-  -quit
+  -testPlatform EditMode \
+  -assemblyNames MINgo.EditMode \
+  -testResults "Builds/TestResults/editmode-mvp.xml"
 ```
 
 Expected: landing classifier tests pass.

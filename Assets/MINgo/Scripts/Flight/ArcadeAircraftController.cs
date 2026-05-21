@@ -41,6 +41,14 @@ namespace MINgo.Flight
             FlightInputSnapshot input = FlightInputReader.ReadKeyboard();
             Throttle01 = Mathf.Clamp01(Throttle01 + input.ThrottleDelta * throttleChangeRate * Time.fixedDeltaTime);
 
+            if (CurrentState == AircraftState.Crashed || CurrentState == AircraftState.Submerged)
+            {
+                Throttle01 = 0f;
+                body.linearVelocity *= 0.98f;
+                body.angularVelocity *= 0.98f;
+                return;
+            }
+
             float forwardSpeed = Vector3.Dot(body.linearVelocity, transform.forward);
             float speed01 = Mathf.Clamp01(Mathf.Abs(forwardSpeed) / takeoffSpeed);
 
@@ -67,15 +75,14 @@ namespace MINgo.Flight
                 body.AddForce(-body.linearVelocity * groundBrake, ForceMode.Force);
             }
 
-            if (CurrentState == AircraftState.Crashed || CurrentState == AircraftState.Submerged)
+            if (!hasGroundContact || SpeedMetersPerSecond >= takeoffSpeed)
             {
-                Throttle01 = 0f;
-                return;
+                CurrentState = AircraftState.Flying;
             }
-
-            CurrentState = hasGroundContact && SpeedMetersPerSecond < takeoffSpeed
-                ? AircraftState.Grounded
-                : AircraftState.Flying;
+            else if (CurrentState != AircraftState.Landed && CurrentState != AircraftState.Damaged)
+            {
+                CurrentState = AircraftState.Grounded;
+            }
         }
 
         public void SetAircraftState(AircraftState state)

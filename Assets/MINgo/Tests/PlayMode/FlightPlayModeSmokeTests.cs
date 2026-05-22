@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using MINgo.Flight;
 using MINgo.Vehicles;
@@ -83,15 +84,14 @@ namespace MINgo.Tests
                 handbrake: false,
                 switchVehicle: false));
 
-            for (int i = 0; i < 180; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
+            yield return SimulateFixedFrames(100);
 
-            Assert.That(car.SpeedMetersPerSecond, Is.GreaterThan(6f));
-            Assert.That(Vector3.Distance(startPosition, car.transform.position), Is.GreaterThan(10f));
-            Assert.That(Mathf.Abs(Mathf.DeltaAngle(startYaw, car.transform.eulerAngles.y)), Is.GreaterThan(5f));
+            float yawDelta = Mathf.Abs(Mathf.DeltaAngle(startYaw, car.transform.eulerAngles.y));
+            Assert.That(car.SpeedMetersPerSecond, Is.GreaterThanOrEqualTo(7.5f));
+            Assert.That(HorizontalDistance(startPosition, car.transform.position), Is.GreaterThan(8f));
+            Assert.That(yawDelta, Is.GreaterThanOrEqualTo(20f));
             Assert.That(car.GroundedWheelCount, Is.GreaterThanOrEqualTo(3));
+            Assert.That(Mathf.Abs(car.RollDegrees), Is.LessThan(12f));
         }
 
         [UnityTest]
@@ -111,16 +111,159 @@ namespace MINgo.Tests
                 handbrake: false,
                 switchVehicle: false));
 
-            for (int i = 0; i < 220; i++)
+            yield return SimulateFixedFrames(100);
+
+            float backwardTravel = SignedForwardTravel(startPosition, car.transform.position, startForward);
+            float yawDelta = Mathf.Abs(Mathf.DeltaAngle(startYaw, car.transform.eulerAngles.y));
+            Assert.That(backwardTravel, Is.LessThanOrEqualTo(-4f));
+            Assert.That(car.SpeedMetersPerSecond, Is.GreaterThan(2f));
+            Assert.That(yawDelta, Is.GreaterThanOrEqualTo(10f));
+            Assert.That(car.GroundedWheelCount, Is.GreaterThanOrEqualTo(3));
+            Assert.That(Mathf.Abs(car.RollDegrees), Is.LessThan(12f));
+        }
+
+        [UnityTest]
+        public IEnumerator CarForwardLaunchAndNeutralCoastMeetArcadeThresholds()
+        {
+            yield return LoadFreeFlightScene();
+            ArcadeCarController car = ActivateCarForTest();
+            Assert.That(car, Is.Not.Null);
+
+            Vector3 startPosition = car.transform.position;
+            int groundedSamples = 0;
+            int totalSamples = 0;
+
+            VehicleInputReader.SetInputOverrideForTests(new VehicleInputSnapshot(
+                throttle: 1f,
+                steer: 0f,
+                handbrake: false,
+                switchVehicle: false));
+
+            yield return SimulateFixedFrames(100, () =>
+            {
+                groundedSamples += car.GroundedWheelCount >= 3 ? 1 : 0;
+                totalSamples++;
+            });
+            float speedAfterTwoSeconds = car.SpeedMetersPerSecond;
+
+            yield return SimulateFixedFrames(100, () =>
+            {
+                groundedSamples += car.GroundedWheelCount >= 3 ? 1 : 0;
+                totalSamples++;
+            });
+            float speedAtRelease = car.SpeedMetersPerSecond;
+            float forwardDistance = HorizontalDistance(startPosition, car.transform.position);
+
+            VehicleInputReader.SetInputOverrideForTests(new VehicleInputSnapshot(
+                throttle: 0f,
+                steer: 0f,
+                handbrake: false,
+                switchVehicle: false));
+
+            yield return SimulateFixedFrames(150, () =>
+            {
+                groundedSamples += car.GroundedWheelCount >= 3 ? 1 : 0;
+                totalSamples++;
+            });
+            float speedAfterCoast = car.SpeedMetersPerSecond;
+            float coastRatio = speedAfterCoast / Mathf.Max(speedAtRelease, 0.01f);
+
+            Assert.That(speedAfterTwoSeconds, Is.GreaterThanOrEqualTo(7.5f));
+            Assert.That(forwardDistance >= 24f || speedAtRelease >= 12f, Is.True,
+                $"Forward launch was too weak. distance={forwardDistance:F2}, speed={speedAtRelease:F2}");
+            Assert.That(coastRatio, Is.InRange(0.55f, 0.75f));
+            Assert.That(GroundedRatio(groundedSamples, totalSamples), Is.GreaterThanOrEqualTo(0.95f));
+            Assert.That(car.transform.position.y, Is.LessThan(2.5f));
+            Assert.That(Mathf.Abs(car.RollDegrees), Is.LessThan(12f));
+        }
+
+        [UnityTest]
+        public IEnumerator CarBrakesFromSpeedThenReversesFromLowSpeed()
+        {
+            yield return LoadFreeFlightScene();
+            ArcadeCarController car = ActivateCarForTest();
+            Assert.That(car, Is.Not.Null);
+
+            VehicleInputReader.SetInputOverrideForTests(new VehicleInputSnapshot(
+                throttle: 1f,
+                steer: 0f,
+                handbrake: false,
+                switchVehicle: false));
+            yield return SimulateFixedFrames(150);
+            float brakeStartSpeed = car.SpeedMetersPerSecond;
+            Assert.That(brakeStartSpeed, Is.GreaterThanOrEqualTo(8f));
+
+            VehicleInputReader.SetInputOverrideForTests(new VehicleInputSnapshot(
+                throttle: -1f,
+                steer: 0f,
+                handbrake: false,
+                switchVehicle: false));
+            yield return SimulateFixedFrames(100);
+            Assert.That(car.SpeedMetersPerSecond, Is.LessThanOrEqualTo(brakeStartSpeed * 0.4f));
+
+            yield return LoadFreeFlightScene();
+            car = ActivateCarForTest();
+            Assert.That(car.SpeedMetersPerSecond, Is.LessThanOrEqualTo(1.5f));
+
+            Vector3 startPosition = car.transform.position;
+            Vector3 startForward = car.transform.forward;
+            VehicleInputReader.SetInputOverrideForTests(new VehicleInputSnapshot(
+                throttle: -1f,
+                steer: 0f,
+                handbrake: false,
+                switchVehicle: false));
+            yield return SimulateFixedFrames(125);
+
+            Assert.That(SignedForwardTravel(startPosition, car.transform.position, startForward), Is.LessThanOrEqualTo(-4f));
+            Assert.That(car.GroundedWheelCount, Is.GreaterThanOrEqualTo(3));
+            Assert.That(Mathf.Abs(car.RollDegrees), Is.LessThan(12f));
+        }
+
+        [UnityTest]
+        public IEnumerator CarHandbrakeTurnRotatesWithoutFlipping()
+        {
+            yield return LoadFreeFlightScene();
+            ArcadeCarController car = ActivateCarForTest();
+            Assert.That(car, Is.Not.Null);
+
+            VehicleInputReader.SetInputOverrideForTests(new VehicleInputSnapshot(
+                throttle: 1f,
+                steer: 0f,
+                handbrake: false,
+                switchVehicle: false));
+
+            for (int i = 0; i < 180; i++)
             {
                 yield return new WaitForFixedUpdate();
+                if (car.SpeedMetersPerSecond >= 8f && car.SpeedMetersPerSecond <= 12f)
+                {
+                    break;
+                }
             }
 
-            float backwardTravel = Vector3.Dot(car.transform.position - startPosition, startForward);
-            Assert.That(backwardTravel, Is.LessThan(-3f));
-            Assert.That(car.SpeedMetersPerSecond, Is.GreaterThan(2f));
-            Assert.That(Mathf.Abs(Mathf.DeltaAngle(startYaw, car.transform.eulerAngles.y)), Is.GreaterThan(4f));
-            Assert.That(car.GroundedWheelCount, Is.GreaterThanOrEqualTo(3));
+            float speedBeforeHandbrake = car.SpeedMetersPerSecond;
+            Assert.That(speedBeforeHandbrake, Is.InRange(8f, 12f));
+            float yawBeforeHandbrake = car.transform.eulerAngles.y;
+            int groundedSamples = 0;
+            int totalSamples = 0;
+
+            VehicleInputReader.SetInputOverrideForTests(new VehicleInputSnapshot(
+                throttle: 0f,
+                steer: 1f,
+                handbrake: true,
+                switchVehicle: false));
+
+            yield return SimulateFixedFrames(100, () =>
+            {
+                groundedSamples += car.GroundedWheelCount >= 2 ? 1 : 0;
+                totalSamples++;
+            });
+            float yawDelta = Mathf.Abs(Mathf.DeltaAngle(yawBeforeHandbrake, car.transform.eulerAngles.y));
+
+            Assert.That(yawDelta, Is.InRange(35f, 75f));
+            Assert.That(GroundedRatio(groundedSamples, totalSamples), Is.GreaterThanOrEqualTo(0.95f));
+            Assert.That(car.transform.position.y, Is.LessThan(2.5f));
+            Assert.That(Mathf.Abs(car.RollDegrees), Is.LessThan(25f));
         }
 
         [UnityTest]
@@ -300,14 +443,52 @@ namespace MINgo.Tests
             yield return new WaitForFixedUpdate();
         }
 
+        private static IEnumerator SimulateFixedFrames(int frameCount)
+        {
+            for (int i = 0; i < frameCount; i++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+        }
+
+        private static IEnumerator SimulateFixedFrames(int frameCount, Action onFrame)
+        {
+            for (int i = 0; i < frameCount; i++)
+            {
+                onFrame();
+                yield return new WaitForFixedUpdate();
+            }
+        }
+
+        private static float HorizontalDistance(Vector3 a, Vector3 b)
+        {
+            Vector3 delta = b - a;
+            delta.y = 0f;
+            return delta.magnitude;
+        }
+
+        private static float SignedForwardTravel(Vector3 startPosition, Vector3 endPosition, Vector3 startForward)
+        {
+            Vector3 delta = endPosition - startPosition;
+            delta.y = 0f;
+            Vector3 forward = startForward;
+            forward.y = 0f;
+            return Vector3.Dot(delta, forward.normalized);
+        }
+
+        private static float GroundedRatio(int groundedSamples, int totalSamples)
+        {
+            return totalSamples == 0 ? 0f : groundedSamples / (float)totalSamples;
+        }
+
         private static ArcadeAircraftController FindAircraft()
         {
-            return Object.FindFirstObjectByType<ArcadeAircraftController>();
+            return UnityEngine.Object.FindFirstObjectByType<ArcadeAircraftController>();
         }
 
         private static ArcadeCarController ActivateCarForTest()
         {
-            PlayerVehicleSwitcher switcher = Object.FindFirstObjectByType<PlayerVehicleSwitcher>();
+            PlayerVehicleSwitcher switcher = UnityEngine.Object.FindFirstObjectByType<PlayerVehicleSwitcher>();
             Assert.That(switcher, Is.Not.Null);
             switcher.startInAircraft = false;
             switcher.SetActiveVehicle(useAircraft: false);

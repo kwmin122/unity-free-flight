@@ -171,7 +171,8 @@ namespace MINgo.Tests
             Assert.That(speedAfterTwoSeconds, Is.GreaterThanOrEqualTo(7.5f));
             Assert.That(forwardDistance >= 24f || speedAtRelease >= 12f, Is.True,
                 $"Forward launch was too weak. distance={forwardDistance:F2}, speed={speedAtRelease:F2}");
-            Assert.That(coastRatio, Is.InRange(0.55f, 0.75f));
+            Assert.That(coastRatio, Is.InRange(0.55f, 0.75f),
+                $"Coasting ratio outside arcade band. release={speedAtRelease:F2}, after={speedAfterCoast:F2}, ratio={coastRatio:F2}");
             Assert.That(GroundedRatio(groundedSamples, totalSamples), Is.GreaterThanOrEqualTo(0.95f));
             Assert.That(car.transform.position.y, Is.LessThan(2.5f));
             Assert.That(Mathf.Abs(car.RollDegrees), Is.LessThan(12f));
@@ -260,7 +261,8 @@ namespace MINgo.Tests
             });
             float yawDelta = Mathf.Abs(Mathf.DeltaAngle(yawBeforeHandbrake, car.transform.eulerAngles.y));
 
-            Assert.That(yawDelta, Is.InRange(35f, 75f));
+            Assert.That(yawDelta, Is.InRange(35f, 75f),
+                $"Handbrake yaw outside arcade band. speed={speedBeforeHandbrake:F2}, yaw={yawDelta:F2}");
             Assert.That(GroundedRatio(groundedSamples, totalSamples), Is.GreaterThanOrEqualTo(0.95f));
             Assert.That(car.transform.position.y, Is.LessThan(2.5f));
             Assert.That(Mathf.Abs(car.RollDegrees), Is.LessThan(25f));

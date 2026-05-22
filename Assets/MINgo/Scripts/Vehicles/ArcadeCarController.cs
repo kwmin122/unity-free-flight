@@ -25,16 +25,24 @@ namespace MINgo.Vehicles
         public float reverseTorque = 950f;
         public float wheelMotorTorqueScale;
         public float brakeTorque = 2600f;
-        public float coastBrakeTorque = 260f;
+        public float coastBrakeTorque;
         public float handbrakeTorque = 4200f;
-        public float driveAssistAcceleration = 34f;
-        public float reverseAssistAcceleration = 34f;
+        public float driveAssistAcceleration = 92f;
+        public float reverseAssistAcceleration = 62f;
         public float maxForwardSpeed = 34f;
         public float maxReverseSpeed = 9f;
         public float maxSteerDegrees = 28f;
         public float fullSteerSpeed = 5f;
         public float reducedSteerSpeed = 24f;
         public float reverseThreshold = 4.5f;
+        public float reverseSteerScale = 0.65f;
+        public float neutralCoastAcceleration = 2.8f;
+        public float directionChangeBrakeAcceleration = 14f;
+        public float steeringYawAcceleration = 58f;
+        public float handbrakeYawAcceleration = 260f;
+        public float handbrakeMinimumSpeed = 8f;
+        public float handbrakeMaximumAssistSpeed = 12f;
+        public float groundStickAcceleration = 18f;
         public float downforce = 28f;
         public float antiRollForce = 6500f;
         public float lowGroundSupportHeight = 1.5f;
@@ -84,6 +92,11 @@ namespace MINgo.Vehicles
 
             ApplyWheelControls(input, forwardSpeed);
             ApplyDriveAssist(CurrentDriveMode, forwardSpeed);
+            ApplyDirectionChangeBrake(input, forwardSpeed);
+            ApplyNeutralCoastAssist(input, forwardSpeed);
+            ApplySteeringYawAssist(input, forwardSpeed);
+            ApplyHandbrakeTurnAssist(input);
+            ApplyGroundStickAssist();
             ApplyDownforce();
             ApplyAntiRoll(frontLeftWheel, frontRightWheel);
             ApplyAntiRoll(rearLeftWheel, rearRightWheel);
@@ -168,7 +181,7 @@ namespace MINgo.Vehicles
         private void ApplyWheelControls(VehicleInputSnapshot input, float forwardSpeed)
         {
             float steerInput = CurrentDriveMode == DriveMode.Reverse
-                ? input.Steer * 0.45f
+                ? input.Steer * reverseSteerScale
                 : input.Steer;
             float steerDegrees = CalculateSteeringDegrees(
                 steerInput,
@@ -227,6 +240,96 @@ namespace MINgo.Vehicles
             else if (mode == DriveMode.Reverse && forwardSpeed > -maxReverseSpeed)
             {
                 body.AddForce(-transform.forward * reverseAssistAcceleration, ForceMode.Acceleration);
+            }
+        }
+
+        private void ApplyDirectionChangeBrake(VehicleInputSnapshot input, float forwardSpeed)
+        {
+            if (!HasGroundSupport())
+            {
+                return;
+            }
+
+            bool brakingForward = forwardSpeed > 0.5f && input.Throttle < -0.05f;
+            bool brakingReverse = forwardSpeed < -0.5f && input.Throttle > 0.05f;
+            if (!brakingForward && !brakingReverse)
+            {
+                return;
+            }
+
+            Vector3 localVelocity = transform.InverseTransformDirection(body.linearVelocity);
+            float brakeDelta = Mathf.Sign(forwardSpeed) * directionChangeBrakeAcceleration * Time.fixedDeltaTime;
+            if (Mathf.Abs(brakeDelta) > Mathf.Abs(localVelocity.z))
+            {
+                localVelocity.z = 0f;
+            }
+            else
+            {
+                localVelocity.z -= brakeDelta;
+            }
+
+            body.linearVelocity = transform.TransformDirection(localVelocity);
+        }
+
+        private void ApplyNeutralCoastAssist(VehicleInputSnapshot input, float forwardSpeed)
+        {
+            if (!HasGroundSupport() || Mathf.Abs(input.Throttle) > 0.05f || Mathf.Abs(forwardSpeed) < 0.5f)
+            {
+                return;
+            }
+
+            Vector3 localVelocity = transform.InverseTransformDirection(body.linearVelocity);
+            float brakingDelta = Mathf.Sign(forwardSpeed) * neutralCoastAcceleration * Time.fixedDeltaTime;
+            if (Mathf.Abs(brakingDelta) > Mathf.Abs(localVelocity.z))
+            {
+                localVelocity.z = 0f;
+            }
+            else
+            {
+                localVelocity.z -= brakingDelta;
+            }
+
+            body.linearVelocity = transform.TransformDirection(localVelocity);
+        }
+
+        private void ApplySteeringYawAssist(VehicleInputSnapshot input, float forwardSpeed)
+        {
+            if (input.Handbrake || !HasGroundSupport() || Mathf.Abs(input.Steer) < 0.05f)
+            {
+                return;
+            }
+
+            float speedBlend = Mathf.Clamp01(Mathf.Abs(forwardSpeed) / 8f);
+            if (speedBlend <= 0f)
+            {
+                return;
+            }
+
+            body.AddTorque(Vector3.up * (input.Steer * steeringYawAcceleration * speedBlend), ForceMode.Acceleration);
+        }
+
+        private void ApplyHandbrakeTurnAssist(VehicleInputSnapshot input)
+        {
+            if (!input.Handbrake || !HasGroundSupport() || Mathf.Abs(input.Steer) < 0.05f)
+            {
+                return;
+            }
+
+            float speed = body.linearVelocity.magnitude;
+            if (speed < handbrakeMinimumSpeed || speed > handbrakeMaximumAssistSpeed + 4f)
+            {
+                return;
+            }
+
+            float speedAssist = Mathf.InverseLerp(handbrakeMinimumSpeed, handbrakeMaximumAssistSpeed, speed);
+            body.AddTorque(Vector3.up * (input.Steer * handbrakeYawAcceleration * Mathf.Max(0.35f, speedAssist)), ForceMode.Acceleration);
+        }
+
+        private void ApplyGroundStickAssist()
+        {
+            if (HasGroundSupport() && body.linearVelocity.sqrMagnitude > 0.25f)
+            {
+                body.AddForce(Vector3.down * groundStickAcceleration, ForceMode.Acceleration);
             }
         }
 

@@ -38,15 +38,17 @@ All criteria are measured in PlayMode inside `Assets/Scenes/FreeFlightSandbox.un
 
 | Behavior | Input | Required result |
 | --- | --- | --- |
-| Forward launch | Hold `W` for 2 seconds | speed is at least `6 m/s` |
-| Forward travel | Hold `W` for 4 seconds | travel distance is at least `14m` from start |
-| Neutral coasting | Release `W` for 3 seconds after launch | speed drops by at least `40%` from release speed |
-| Reverse transition | Hold `S` from stopped or low speed for 2.5 seconds | backward travel is at least `3m` |
-| Forward diagonal | Hold `W+D` for 3 seconds | speed is at least `6 m/s`, yaw changes at least `5 degrees`, grounded wheels at least `3` |
-| Reverse diagonal | Hold `S+D` for 3.5 seconds | backward travel is at least `3m`, yaw changes at least `4 degrees`, grounded wheels at least `3` |
-| Handbrake turn | Hold `Space + D` for 2 seconds while moving | yaw changes at least `18 degrees`, roll stays under `18 degrees`, grounded wheels at least `3` |
-| Stability | During all car movement tests | car height remains under `2.5m`, roll remains under `18 degrees` |
-| Camera follow | Active car camera after switching | target distance stays between `6m` and `12m`, camera is behind the car, camera does not enter the chassis |
+| Forward launch | Hold `W` for 2 seconds | speed is at least `7.5 m/s` |
+| Forward travel | Hold `W` for 4 seconds | travel distance is at least `24m` from start or speed is at least `12 m/s` |
+| Neutral coasting | Release `W` for 3 seconds after launch | speed drops by `25%` to `45%` from release speed |
+| Brake from speed | Reach at least `8 m/s`, then hold `S` for 2 seconds | speed is reduced by at least `60%` |
+| Reverse transition | Hold `S` from stopped or `<= 1.5 m/s` for 2.5 seconds | backward travel is at least `4m` |
+| Forward diagonal | Hold `W+D` for 2 seconds | car moves forward and yaw changes at least `20 degrees` |
+| Reverse diagonal | Hold `S+D` from stopped or `<= 1.5 m/s` for 2 seconds | car moves backward and yaw changes at least `10 degrees` |
+| Handbrake turn | Start at `8` to `12 m/s`, then hold `Space + D` for 2 seconds | yaw changes `35` to `75 degrees`, roll stays under `25 degrees`, grounded wheels at least `2` |
+| Grounding | During normal driving and turning | grounded wheel count is at least `3` for `95%` of sampled fixed frames |
+| Stability | During normal car movement tests | car height remains under `2.5m`, roll remains under `12 degrees`; handbrake or bumps may reach `25 degrees` max |
+| Camera follow | Active car camera after switching | target distance stays between `6m` and `12m`, camera is behind the car, camera does not enter the chassis, and reverse/handbrake camera movement does not jump away from the target |
 
 ## Aircraft Acceptance Criteria
 
@@ -55,13 +57,14 @@ All criteria are measured in PlayMode inside `Assets/Scenes/FreeFlightSandbox.un
 | Behavior | Input | Required result |
 | --- | --- | --- |
 | Takeoff | Hold `W` for up to 8 seconds from runway start | altitude is at least `8m`, state is not `Crashed` or `Submerged` |
-| Minimum climb speed | Same takeoff test | speed is at least `14 m/s` by the time altitude reaches `8m` |
-| Banked turn | After takeoff, hold right turn for 3 seconds | absolute roll is between `15` and `45 degrees`, heading changes at least `8 degrees` |
+| Takeoff speed | Same takeoff test | speed is between `18` and `25 m/s` by the time altitude reaches `8m` |
+| Takeoff runway distance | Same takeoff test | horizontal runway travel before reaching `8m` altitude is at most `180m` |
+| Banked turn | After takeoff, hold right turn for 3 seconds | absolute roll is between `15` and `45 degrees`, heading changes at least `20 degrees` |
 | Auto-level recovery | Release controls for 4 seconds after banked turn | absolute roll returns to `10 degrees` or less |
-| Slowdown | Hold slowdown for 3 seconds after cruise throttle | speed is lower than idle coast by at least `10%` |
-| Descent assist | Hold slowdown while airborne for 3 seconds | altitude drops or vertical velocity becomes more downward than idle coast |
-| Landing approach stability | Fly toward runway with low throttle and level controls for 5 seconds | state remains not `Crashed`, roll stays under `25 degrees`, pitch does not diverge into a stall-like climb |
-| Camera follow | Active aircraft camera during cruise and turn | target distance stays between `7m` and `11m`, aircraft remains in front of the camera, camera does not show sky-only framing for the whole sample |
+| Slowdown | Hold slowdown for 3 seconds after cruise throttle | speed drops by at least `15%` from slowdown start speed |
+| Descent assist | Hold slowdown while airborne for 3 seconds | vertical speed becomes at least `1.5 m/s` more downward than idle coast in the same setup |
+| Landing approach stability | Fly toward runway with low throttle and level controls for 8 seconds | state remains not `Crashed`, roll stays under `20 degrees`, pitch surge and repeated roll sign-flips do not appear, touchdown vertical speed does not run away |
+| Camera follow | Active aircraft camera during cruise and turn | chase distance stays between `9m` and `16m` in steady cruise and within `8m` to `18m` dynamically, aircraft remains near screen center, and camera does not show sky-only framing for the whole sample |
 
 ## Implementation Direction
 
@@ -71,17 +74,19 @@ Car:
 
 - Keep WheelColliders for contact, suspension, braking, and wheel pose.
 - Keep grounded traction assist for keyboard-friendly launch and reverse.
-- Add or tune explicit neutral coasting drag so releasing `W` visibly slows the car.
-- Add handbrake yaw assist only when the car is moving and grounded.
+- Use speed-based steering so low-speed turns are readable without making high-speed driving twitchy.
+- Add automatic braking when direction changes from forward to reverse, so `S` first brakes and then reverses.
+- Add or tune explicit neutral coasting drag so releasing `W` slows the car by the required `25%` to `45%` in 3 seconds.
+- Add handbrake yaw assist only when the car is moving, grounded, and already in the `8` to `12 m/s` arcade drift band.
 - Keep road paint and markings visual-only so the car is not blocked by hidden colliders.
 
 Aircraft:
 
 - Keep the current hold-to-throttle model.
-- Tune takeoff assist, lift limits, and ground contact state so takeoff is reliable from the default runway.
-- Tune turn assist so turn input creates readable bank but auto-level recovers predictably.
-- Make slowdown input cut throttle, add airbrake drag, and add a mild descent assist while airborne.
-- Keep the chase camera close enough to read the vehicle silhouette.
+- Tune takeoff assist, lift limits, and ground contact state so takeoff is reliable from the default runway without turning into a vertical rocket.
+- Tune turn assist so turn input creates readable `15` to `45 degree` bank, at least `20 degrees` of heading change, and predictable auto-level recovery.
+- Make slowdown input cut throttle, add airbrake drag, and add a mild descent assist while airborne. Keep slowdown and descent as separately measurable effects.
+- Keep the chase camera close enough to read the vehicle silhouette while preserving horizon and ground context.
 
 Camera:
 

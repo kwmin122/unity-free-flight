@@ -40,3 +40,7 @@ Assets/AssetStoreTools*
 # Local agent/runtime caches
 .codex/
 .superpowers/brainstorm/
+
+# Local Unity AI Assistant gateway settings
+ProjectSettings/AI.Assistant/
+ProjectSettings/Packages/com.unity.ai.assistant/

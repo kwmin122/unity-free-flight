@@ -316,6 +316,9 @@ namespace MINgo.Tests
             AssertRoofAndFacadeMaterials("Seoul Yeouido IFC Tower 0", atlas);
             AssertRoofAndFacadeMaterials("Seoul Jamsil Apartment Cluster 0", atlas);
             AssertRoofAndFacadeMaterials("Seoul Map East Boundary Landmark", atlas);
+            AssertRoofAndFacadeMaterials("N Seoul Tower", atlas);
+            AssertRoofAndFacadeMaterials("Jamsil Lotte World Tower", atlas);
+            AssertRoofAndFacadeMaterials("Seoul Jongno Palace Gate", atlas);
         }
 
         [Test]

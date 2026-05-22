@@ -1327,6 +1327,18 @@ namespace MINgo.EditorTools
 
         private static GameObject CreateBlock(string name, Vector3 position, Vector3 scale, Color color)
         {
+            if (IsSeoulWorldName(name) && ShouldUseSeoulFaceSplitBlock(name, scale))
+            {
+                return CreateSeoulBoxWithFaces(
+                    name,
+                    position,
+                    scale,
+                    color,
+                    GetSeoulBlockTile(name),
+                    GetSeoulRoofColor(name),
+                    GetSeoulRoofTile(name));
+            }
+
             GameObject block = GameObject.CreatePrimitive(PrimitiveType.Cube);
             block.name = name;
             block.transform.position = position;
@@ -1338,6 +1350,26 @@ namespace MINgo.EditorTools
                     color,
                     GetBlockTile(name));
             return block;
+        }
+
+        private static bool ShouldUseSeoulFaceSplitBlock(string name, Vector3 scale)
+        {
+            if (scale.y < 6f || name.Contains("Ridge"))
+            {
+                return false;
+            }
+
+            return !name.Contains("Road")
+                && !name.Contains("Bridge")
+                && !name.Contains("Expressway")
+                && !name.Contains("Park")
+                && !name.Contains("Plaza")
+                && !name.Contains("Lake")
+                && !name.Contains("River")
+                && !name.Contains("Marking")
+                && !name.Contains("Strip")
+                && !name.Contains("Line")
+                && !name.Contains("Fountain");
         }
 
         private static GameObject CreateVisualBlock(string name, Vector3 position, Vector3 scale, Color color)
@@ -1470,6 +1502,36 @@ namespace MINgo.EditorTools
             }
 
             return SeoulAtlasTile.ConcreteFacade;
+        }
+
+        private static SeoulAtlasTile GetSeoulRoofTile(string name)
+        {
+            if (name.Contains("Palace") || name.Contains("Gate"))
+            {
+                return SeoulAtlasTile.PalaceRoof;
+            }
+
+            if (name.Contains("Tower") || name.Contains("Landmark") || name.Contains("Mast") || name.Contains("Antenna"))
+            {
+                return SeoulAtlasTile.RoofMechanical;
+            }
+
+            return SeoulAtlasTile.RoofMechanical;
+        }
+
+        private static Color GetSeoulRoofColor(string name)
+        {
+            if (name.Contains("Palace") || name.Contains("Gate"))
+            {
+                return new Color(0.34f, 0.12f, 0.09f);
+            }
+
+            if (name.Contains("Tower") || name.Contains("Landmark"))
+            {
+                return new Color(0.16f, 0.18f, 0.19f);
+            }
+
+            return new Color(0.28f, 0.29f, 0.28f);
         }
 
         private static bool IsSeoulWorldName(string name)

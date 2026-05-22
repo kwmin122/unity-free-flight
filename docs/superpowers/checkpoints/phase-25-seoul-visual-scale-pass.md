@@ -24,6 +24,7 @@ Make the Seoul map feel larger and less blockout-like while keeping the movement
   - Hangang corridor spans over 2600m east-west.
   - Added west/east map boundary landmarks and extended riverside roads.
 - Added custom Seoul building meshes with distinct side and roof material submeshes.
+- Extended the roof/facade contract to named Seoul landmarks: `N Seoul Tower`, `Jamsil Lotte World Tower`, and `Seoul Jongno Palace Gate`.
 - Added a shared mesh asset so every side/roof building reuses the same roof-split cube mesh instead of embedding unique meshes in the scene.
 - Increased district fabric around Gangnam, Yeouido, Jamsil, and Jongno.
 - Tuned car handbrake control:
@@ -39,4 +40,4 @@ Final verification used a temp copy of the current on-disk project without rerun
 - PlayMode: 14/14 passed.
 - macOS player build: exit 0.
 
-Temp project: `/tmp/MINgo-seoul-visual-final3.3cuiHh`
+Temp project: `/tmp/MINgo-seoul-visual-final4.BrfqJl`

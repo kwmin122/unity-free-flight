@@ -81,7 +81,7 @@ namespace MINgo.EditorTools
 
             GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
             ground.name = "Flight Reference Ground";
-            ground.transform.position = new Vector3(0f, -0.22f, 500f);
+            ground.transform.position = new Vector3(0f, -0.04f, 500f);
             ground.transform.localScale = new Vector3(5200f, 0.08f, 5200f);
             ground.GetComponent<Renderer>().sharedMaterial = MakeAtlasMaterial(
                 "Flight_Reference_Ground_Mat",
@@ -599,8 +599,8 @@ namespace MINgo.EditorTools
 
         private static void CreateFields()
         {
-            CreateLandingSurface("Open Field", SurfaceKind.Field, new Vector3(-115f, 0.02f, 260f), new Vector3(150f, 0.14f, 150f), new Color(0.28f, 0.48f, 0.27f));
-            CreateLandingSurface("Long Meadow", SurfaceKind.Field, new Vector3(-220f, 0.02f, 165f), new Vector3(95f, 0.14f, 250f), new Color(0.34f, 0.55f, 0.3f));
+            CreateLandingSurface("Open Field", SurfaceKind.Field, new Vector3(-115f, 0.01f, 260f), new Vector3(150f, 0.04f, 150f), new Color(0.28f, 0.48f, 0.27f));
+            CreateLandingSurface("Long Meadow", SurfaceKind.Field, new Vector3(-220f, 0.01f, 165f), new Vector3(95f, 0.04f, 250f), new Color(0.34f, 0.55f, 0.3f));
             CreateBlock("Field Tree Line", new Vector3(-40f, 5f, 360f), new Vector3(12f, 10f, 170f), new Color(0.14f, 0.28f, 0.15f));
             CreateTreeCluster("Meadow Tree Cluster 0", new Vector3(-180f, 0.1f, 320f));
             CreateTreeCluster("Meadow Tree Cluster 1", new Vector3(-72f, 0.1f, 228f));
@@ -921,7 +921,7 @@ namespace MINgo.EditorTools
         private static GameObject CreateAircraft()
         {
             var aircraft = new GameObject("Player Aircraft");
-            aircraft.transform.position = new Vector3(0f, 2f, -65f);
+            aircraft.transform.position = new Vector3(0f, 1.12f, -65f);
             aircraft.transform.rotation = Quaternion.identity;
 
             var body = aircraft.AddComponent<Rigidbody>();
@@ -961,15 +961,18 @@ namespace MINgo.EditorTools
 
             var controller = aircraft.AddComponent<ArcadeAircraftController>();
             controller.maxThrust = 52f;
-            controller.stabilization = 4.5f;
-            controller.autoLevel = 8f;
-            controller.autoLevelRotationRate = 2.6f;
+            controller.stabilization = 6f;
+            controller.autoLevel = 12f;
+            controller.autoLevelRotationRate = 4f;
             controller.assistedBankAngle = 22f;
             controller.turnYawAssist = 0.45f;
-            controller.takeoffLiftAssist = 90f;
+            controller.takeoffLiftAssist = 130f;
             controller.slowdownDescentAcceleration = 18f;
             controller.slowdownPitchDamping = 0.55f;
             controller.throttleChangeRate = 3.2f;
+            controller.groundRunAcceleration = 7f;
+            controller.groundSteeringYawRateDegrees = 28f;
+            controller.groundSteeringFullSpeed = 12f;
             aircraft.AddComponent<LandingStateMachine>();
             return aircraft;
         }
@@ -1021,16 +1024,18 @@ namespace MINgo.EditorTools
             controller.coastBrakeTorque = 0f;
             controller.driveAssistAcceleration = 92f;
             controller.reverseAssistAcceleration = 75f;
+            controller.maxForwardSpeed = 20f;
             controller.maxSteerDegrees = 32f;
             controller.fullSteerSpeed = 5f;
             controller.reducedSteerSpeed = 22f;
-            controller.reverseThreshold = 4.5f;
+            controller.reverseThreshold = 1f;
             controller.reverseSteerScale = 0.65f;
-            controller.neutralCoastAcceleration = 2.8f;
-            controller.directionChangeBrakeAcceleration = 14f;
+            controller.neutralCoastAcceleration = 1.1f;
+            controller.directionChangeBrakeAcceleration = 16f;
             controller.steeringYawRateDegrees = 14f;
             controller.handbrakeYawAcceleration = 200f;
-            controller.handbrakeYawRateDegrees = 20f;
+            controller.reverseEngageDelay = 2f;
+            controller.handbrakeYawRateDegrees = 30f;
             controller.handbrakeMinimumSpeed = 8f;
             controller.handbrakeMaximumAssistSpeed = 12f;
             controller.groundStickAcceleration = 18f;

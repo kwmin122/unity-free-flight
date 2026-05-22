@@ -347,6 +347,13 @@ namespace MINgo.Tests
         }
 
         [Test]
+        public void OpenGrassFieldsAreFlushEnoughForVehicleTravel()
+        {
+            AssertLowFieldLip("Open Field");
+            AssertLowFieldLip("Long Meadow");
+        }
+
+        [Test]
         public void SceneContainsProceduralFlightAudioRig()
         {
             ProceduralFlightAudio audio = Object.FindAnyObjectByType<ProceduralFlightAudio>();
@@ -469,6 +476,16 @@ namespace MINgo.Tests
             Assert.That(marking, Is.Not.Null, objectName);
             Assert.That(marking.GetComponent<Renderer>(), Is.Not.Null, objectName);
             Assert.That(marking.GetComponent<Collider>(), Is.Null, objectName);
+        }
+
+        private static void AssertLowFieldLip(string objectName)
+        {
+            GameObject field = GameObject.Find(objectName);
+            Assert.That(field, Is.Not.Null, objectName);
+            Assert.That(field.GetComponent<SurfaceTag>().kind, Is.EqualTo(SurfaceKind.Field), objectName);
+            float top = field.transform.position.y + field.transform.localScale.y * 0.5f;
+            Assert.That(top, Is.LessThanOrEqualTo(0.035f),
+                $"{objectName} has a raised cube lip that can kick WheelColliders. top={top:F3}");
         }
     }
 }

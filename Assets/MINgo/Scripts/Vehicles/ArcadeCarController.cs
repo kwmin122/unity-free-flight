@@ -29,18 +29,19 @@ namespace MINgo.Vehicles
         public float handbrakeTorque = 4200f;
         public float driveAssistAcceleration = 92f;
         public float reverseAssistAcceleration = 75f;
-        public float maxForwardSpeed = 34f;
+        public float maxForwardSpeed = 20f;
         public float maxReverseSpeed = 9f;
         public float maxSteerDegrees = 28f;
         public float fullSteerSpeed = 5f;
         public float reducedSteerSpeed = 24f;
-        public float reverseThreshold = 4.5f;
+        public float reverseThreshold = 1f;
         public float reverseSteerScale = 0.65f;
-        public float neutralCoastAcceleration = 2.8f;
-        public float directionChangeBrakeAcceleration = 14f;
+        public float neutralCoastAcceleration = 1.1f;
+        public float directionChangeBrakeAcceleration = 16f;
         public float steeringYawRateDegrees = 14f;
+        public float reverseEngageDelay = 2f;
         public float handbrakeYawAcceleration = 200f;
-        public float handbrakeYawRateDegrees = 20f;
+        public float handbrakeYawRateDegrees = 30f;
         public float handbrakeMinimumSpeed = 8f;
         public float handbrakeMaximumAssistSpeed = 12f;
         public float groundStickAcceleration = 18f;
@@ -53,6 +54,7 @@ namespace MINgo.Vehicles
         private Rigidbody body;
         private WheelCollider[] driveWheels;
         private WheelCollider[] allWheels;
+        private float reverseEngageTimer;
 
         public float SpeedMetersPerSecond => body == null ? 0f : body.linearVelocity.magnitude;
         public DriveMode CurrentDriveMode { get; private set; }
@@ -88,13 +90,14 @@ namespace MINgo.Vehicles
 
             Vector3 localVelocity = transform.InverseTransformDirection(body.linearVelocity);
             float forwardSpeed = localVelocity.z;
-            CurrentDriveMode = ResolveDriveMode(input.Throttle, forwardSpeed, reverseThreshold);
+            CurrentDriveMode = ResolveDriveModeWithReverseDelay(input.Throttle, forwardSpeed);
             UpdateGroundedWheelCount();
 
             ApplyWheelControls(input, forwardSpeed);
             ApplyDriveAssist(CurrentDriveMode, forwardSpeed);
             ApplyDirectionChangeBrake(input, forwardSpeed);
             ApplyNeutralCoastAssist(input, forwardSpeed);
+            ApplySpeedLimiter();
             ApplySteeringYawAssist(input, forwardSpeed);
             ApplyHandbrakeTurnAssist(input);
             ApplyGroundStickAssist();
@@ -177,6 +180,30 @@ namespace MINgo.Vehicles
             }
 
             return mode == DriveMode.Coasting ? coastBrakeTorque : 0f;
+        }
+
+        private DriveMode ResolveDriveModeWithReverseDelay(float throttleInput, float forwardSpeed)
+        {
+            DriveMode mode = ResolveDriveMode(throttleInput, forwardSpeed, reverseThreshold);
+            if (throttleInput >= -0.05f)
+            {
+                reverseEngageTimer = 0f;
+                return mode;
+            }
+
+            if (mode == DriveMode.Braking)
+            {
+                reverseEngageTimer = reverseEngageDelay;
+                return mode;
+            }
+
+            if (mode == DriveMode.Reverse && reverseEngageTimer > 0f)
+            {
+                reverseEngageTimer = Mathf.Max(0f, reverseEngageTimer - Time.fixedDeltaTime);
+                return DriveMode.Braking;
+            }
+
+            return mode;
         }
 
         private void ApplyWheelControls(VehicleInputSnapshot input, float forwardSpeed)
@@ -290,6 +317,19 @@ namespace MINgo.Vehicles
                 localVelocity.z -= brakingDelta;
             }
 
+            body.linearVelocity = transform.TransformDirection(localVelocity);
+        }
+
+        private void ApplySpeedLimiter()
+        {
+            Vector3 localVelocity = transform.InverseTransformDirection(body.linearVelocity);
+            float clampedForward = Mathf.Clamp(localVelocity.z, -maxReverseSpeed, maxForwardSpeed);
+            if (Mathf.Approximately(clampedForward, localVelocity.z))
+            {
+                return;
+            }
+
+            localVelocity.z = clampedForward;
             body.linearVelocity = transform.TransformDirection(localVelocity);
         }
 

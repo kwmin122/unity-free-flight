@@ -14,15 +14,15 @@ namespace MINgo.Flight
         public float pitchTorque = 35f;
         public float rollTorque = 55f;
         public float yawTorque = 18f;
-        public float stabilization = 4.5f;
-        public float autoLevel = 8f;
-        public float autoLevelRotationRate = 2.6f;
+        public float stabilization = 6f;
+        public float autoLevel = 12f;
+        public float autoLevelRotationRate = 4f;
         public float assistedBankAngle = 22f;
         public float bankAssistResponse = 24f;
         public float turnYawAssist = 0.45f;
         public float takeoffAssistPitch = 0.3f;
         public float takeoffAssistStart01 = 0.82f;
-        public float takeoffLiftAssist = 90f;
+        public float takeoffLiftAssist = 130f;
         public float maxLiftForce = 95f;
         public float speedDrag = 0.012f;
         public float inducedDrag = 0.04f;
@@ -34,6 +34,9 @@ namespace MINgo.Flight
         public float takeoffSpeed = 22f;
         public float throttleChangeRate = 3.2f;
         public float neutralThrottleReleaseRate = 1.4f;
+        public float groundRunAcceleration = 7f;
+        public float groundSteeringYawRateDegrees = 28f;
+        public float groundSteeringFullSpeed = 12f;
         public bool acceptsInput = true;
 
         private Rigidbody body;
@@ -97,6 +100,10 @@ namespace MINgo.Flight
             RollDegrees = FlightControlAssist.CalculateRollDegrees(transform.up, transform.forward);
 
             body.AddForce(transform.forward * (maxThrust * Throttle01), ForceMode.Force);
+            if (hasGroundContact && Throttle01 > 0.05f)
+            {
+                body.AddForce(transform.forward * (groundRunAcceleration * Throttle01), ForceMode.Acceleration);
+            }
 
             AngleOfAttackDegrees = FlightAerodynamics.CalculateAngleOfAttackDegrees(localVelocity);
             LiftCoefficient = FlightAerodynamics.EvaluateLiftCoefficient(
@@ -113,7 +120,7 @@ namespace MINgo.Flight
             }
 
             body.AddForce(liftForce, ForceMode.Force);
-            if (Throttle01 > 0.85f && forwardSpeed > 8f && AltitudeMeters < 12f)
+            if (Throttle01 > 0.85f && forwardSpeed > takeoffSpeed * 0.72f && AltitudeMeters < 12f)
             {
                 body.AddForce(Vector3.up * takeoffLiftAssist, ForceMode.Acceleration);
             }
@@ -143,6 +150,7 @@ namespace MINgo.Flight
                 takeoffAssistPitch,
                 takeoffAssistStart01);
 
+            ApplyGroundSteering(input.Turn, forwardSpeed);
             body.AddTorque(-transform.right * (controls.Pitch * pitchTorque * controlAuthority), ForceMode.Force);
             body.AddTorque(-transform.forward * (controls.Roll * rollTorque * controlAuthority), ForceMode.Force);
             body.AddTorque(transform.up * (controls.Yaw * yawTorque * controlAuthority), ForceMode.Force);
@@ -175,6 +183,22 @@ namespace MINgo.Flight
             }
 
             CurrentState = ResolveMotionState(CurrentState, hasGroundContact, SpeedMetersPerSecond, takeoffSpeed);
+        }
+
+        private void ApplyGroundSteering(float turnInput, float forwardSpeed)
+        {
+            if (!hasGroundContact || Mathf.Abs(turnInput) < 0.05f || forwardSpeed < 0.75f)
+            {
+                return;
+            }
+
+            float speedBlend = Mathf.Clamp01(forwardSpeed / groundSteeringFullSpeed);
+            float yawDelta = turnInput * groundSteeringYawRateDegrees * speedBlend * Time.fixedDeltaTime;
+            body.MoveRotation(Quaternion.AngleAxis(yawDelta, Vector3.up) * body.rotation);
+
+            Vector3 localVelocity = transform.InverseTransformDirection(body.linearVelocity);
+            localVelocity.x *= 0.82f;
+            body.linearVelocity = transform.TransformDirection(localVelocity);
         }
 
         public void SetAircraftState(AircraftState state)

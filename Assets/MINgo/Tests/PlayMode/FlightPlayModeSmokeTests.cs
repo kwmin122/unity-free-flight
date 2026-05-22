@@ -84,6 +84,41 @@ namespace MINgo.Tests
         }
 
         [UnityTest]
+        public IEnumerator AircraftStartsOnRunwayAndGroundSteersBeforeTakeoff()
+        {
+            yield return LoadFreeFlightScene();
+            ArcadeAircraftController aircraft = FindAircraft();
+            Assert.That(aircraft, Is.Not.Null);
+
+            Vector3 startPosition = aircraft.transform.position;
+            Vector3 startForward = aircraft.transform.forward;
+            float startYaw = aircraft.transform.eulerAngles.y;
+            Assert.That(startPosition.y, Is.LessThanOrEqualTo(1.35f),
+                $"Aircraft should start on its floats near the runway, not hovering. y={startPosition.y:F2}");
+
+            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
+                pitch: 0f,
+                roll: 0f,
+                yaw: 0f,
+                turn: 1f,
+                throttleDelta: 1f,
+                brake: false));
+
+            yield return SimulateFixedFrames(100);
+
+            float yawDelta = Mathf.Abs(Mathf.DeltaAngle(startYaw, aircraft.transform.eulerAngles.y));
+            float forwardTravel = SignedForwardTravel(startPosition, aircraft.transform.position, startForward);
+            Assert.That(aircraft.ForwardSpeedMetersPerSecond, Is.GreaterThanOrEqualTo(7.5f));
+            Assert.That(forwardTravel, Is.GreaterThanOrEqualTo(8f));
+            Assert.That(yawDelta, Is.GreaterThanOrEqualTo(12f),
+                $"Aircraft W+D should visibly taxi/turn before takeoff. yawDelta={yawDelta:F2}");
+            Assert.That(aircraft.AltitudeMeters, Is.LessThanOrEqualTo(startPosition.y + 1.25f),
+                $"Aircraft lifted off too abruptly during the first ground roll. start={startPosition.y:F2}, now={aircraft.AltitudeMeters:F2}");
+            Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Crashed));
+            Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Submerged));
+        }
+
+        [UnityTest]
         public IEnumerator CarAccelerationStaysGrounded()
         {
             yield return LoadFreeFlightScene();
@@ -212,6 +247,69 @@ namespace MINgo.Tests
             Assert.That(GroundedRatio(groundedSamples, totalSamples), Is.GreaterThanOrEqualTo(0.95f));
             Assert.That(car.transform.position.y, Is.LessThan(2.5f));
             Assert.That(Mathf.Abs(car.RollDegrees), Is.LessThan(12f));
+        }
+
+        [UnityTest]
+        public IEnumerator CarTopSpeedIsCappedForReadableCityDriving()
+        {
+            yield return LoadFreeFlightScene();
+            ArcadeCarController car = ActivateCarForTest();
+            Assert.That(car, Is.Not.Null);
+
+            VehicleInputReader.SetInputOverrideForTests(new VehicleInputSnapshot(
+                throttle: 1f,
+                steer: 0f,
+                handbrake: false,
+                switchVehicle: false));
+
+            float maxSpeed = 0f;
+            yield return SimulateFixedFrames(360, () =>
+            {
+                maxSpeed = Mathf.Max(maxSpeed, car.SpeedMetersPerSecond);
+            });
+
+            Assert.That(maxSpeed, Is.LessThanOrEqualTo(22.5f),
+                $"City car is too fast for readable GTA-style driving. maxSpeed={maxSpeed:F2} m/s");
+            Assert.That(car.GroundedWheelCount, Is.GreaterThanOrEqualTo(3));
+            Assert.That(Mathf.Abs(car.RollDegrees), Is.LessThan(12f));
+        }
+
+        [UnityTest]
+        public IEnumerator CarCrossesGrassEdgeWithoutLaunching()
+        {
+            yield return LoadFreeFlightScene();
+            ArcadeCarController car = ActivateCarForTest();
+            Assert.That(car, Is.Not.Null);
+
+            Rigidbody body = car.GetComponent<Rigidbody>();
+            Assert.That(body, Is.Not.Null);
+            car.transform.SetPositionAndRotation(new Vector3(-115f, 0.2f, 175f), Quaternion.identity);
+            body.linearVelocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
+
+            VehicleInputReader.SetInputOverrideForTests(new VehicleInputSnapshot(
+                throttle: 1f,
+                steer: 0.25f,
+                handbrake: false,
+                switchVehicle: false));
+
+            float maxHeight = car.transform.position.y;
+            float maxRoll = 0f;
+            int groundedSamples = 0;
+            int totalSamples = 0;
+            yield return SimulateFixedFrames(220, () =>
+            {
+                maxHeight = Mathf.Max(maxHeight, car.transform.position.y);
+                maxRoll = Mathf.Max(maxRoll, Mathf.Abs(car.RollDegrees));
+                groundedSamples += car.GroundedWheelCount >= 3 ? 1 : 0;
+                totalSamples++;
+            });
+
+            Assert.That(maxHeight, Is.LessThanOrEqualTo(1.65f),
+                $"Car launched while entering grass. maxHeight={maxHeight:F2}");
+            Assert.That(maxRoll, Is.LessThanOrEqualTo(16f),
+                $"Car rolled too hard on grass. maxRoll={maxRoll:F2}");
+            Assert.That(GroundedRatio(groundedSamples, totalSamples), Is.GreaterThanOrEqualTo(0.9f));
         }
 
         [UnityTest]

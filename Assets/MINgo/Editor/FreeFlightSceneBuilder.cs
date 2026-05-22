@@ -154,6 +154,13 @@ namespace MINgo.EditorTools
             CreateLandingSurface("Downtown Boulevard", SurfaceKind.Road, new Vector3(95f, 0.06f, 430f), new Vector3(126f, 0.18f, 16f), new Color(0.1f, 0.105f, 0.11f));
             CreateLandingSurface("Coastal Highway Bridge", SurfaceKind.Road, new Vector3(298f, 3.2f, 435f), new Vector3(92f, 0.24f, 14f), new Color(0.15f, 0.16f, 0.17f));
             CreateLandingSurface("Beach Ramp", SurfaceKind.Road, new Vector3(270f, 1.4f, 372f), new Vector3(58f, 0.2f, 12f), new Color(0.18f, 0.17f, 0.15f)).transform.rotation = Quaternion.Euler(0f, 22f, 8f);
+            CreateRoadSegment("Airport Ring Road South", new Vector3(-75f, 0.06f, -118f), new Vector3(170f, 0.18f, 11f), 0f);
+            CreateRoadSegment("Airport Ring Road East", new Vector3(26f, 0.06f, -18f), new Vector3(11f, 0.18f, 190f), 0f);
+            CreateRoadSegment("City Connector Road", new Vector3(34f, 0.07f, 250f), new Vector3(13f, 0.18f, 250f), -18f);
+            CreateRoadSegment("Downtown Roundabout North", new Vector3(95f, 0.08f, 456f), new Vector3(70f, 0.18f, 12f), 0f);
+            CreateRoadSegment("Downtown Roundabout South", new Vector3(95f, 0.08f, 404f), new Vector3(70f, 0.18f, 12f), 0f);
+            CreateRoadSegment("Marina Access Road", new Vector3(410f, 0.06f, 486f), new Vector3(11f, 0.18f, 145f), 72f);
+            CreateRoadSegment("Lighthouse Coastal Road", new Vector3(430f, 0.06f, 220f), new Vector3(12f, 0.18f, 170f), -30f);
             for (int i = 0; i < 4; i++)
             {
                 GameObject switchback = CreateLandingSurface(
@@ -163,6 +170,8 @@ namespace MINgo.EditorTools
                     new Vector3(80f, 0.18f, 12f),
                     new Color(0.12f, 0.115f, 0.105f));
                 switchback.transform.rotation = Quaternion.Euler(0f, i % 2 == 0 ? 34f : -28f, 6f + i * 2f);
+                CreateGuardrail("Mountain Switchback Guardrail " + i + " A", switchback.transform.position + new Vector3(0f, 0.85f, -7f), new Vector3(80f, 1.2f, 0.7f), switchback.transform.eulerAngles.y);
+                CreateGuardrail("Mountain Switchback Guardrail " + i + " B", switchback.transform.position + new Vector3(0f, 0.85f, 7f), new Vector3(80f, 1.2f, 0.7f), switchback.transform.eulerAngles.y);
             }
         }
 
@@ -228,6 +237,17 @@ namespace MINgo.EditorTools
         private static void CreateCanyonRoute()
         {
             CreateLandingSurface("Canyon Floor", SurfaceKind.CanyonFloor, new Vector3(250f, 0.03f, 690f), new Vector3(58f, 0.14f, 330f), new Color(0.46f, 0.34f, 0.24f));
+            for (int i = 0; i < 5; i++)
+            {
+                GameObject road = CreateLandingSurface(
+                    "Canyon Hairpin Road " + i,
+                    SurfaceKind.Road,
+                    new Vector3(250f + (i % 2 == 0 ? -24f : 24f), 1.1f + i * 0.4f, 555f + i * 62f),
+                    new Vector3(72f, 0.18f, 10f),
+                    new Color(0.13f, 0.12f, 0.11f));
+                road.transform.rotation = Quaternion.Euler(0f, i % 2 == 0 ? -31f : 29f, 0f);
+            }
+
             for (int i = 0; i < 6; i++)
             {
                 CreateBlock("Canyon Left Wall " + i, new Vector3(198f, 28f, 555f + i * 58f), new Vector3(36f, 56f, 50f), new Color(0.42f, 0.31f, 0.23f));
@@ -272,6 +292,22 @@ namespace MINgo.EditorTools
                 CreateCylinderBlock(name + " Trunk " + i, basePosition + offset + new Vector3(0f, 3.2f, 0f), new Vector3(1.1f, 3.2f, 1.1f), new Color(0.34f, 0.23f, 0.13f), WorldAtlasTile.Trees);
                 CreateSphereBlock(name + " Canopy " + i, basePosition + offset + new Vector3(0f, 8f, 0f), new Vector3(7f, 5f, 7f), new Color(0.1f, 0.31f, 0.14f), WorldAtlasTile.Trees);
             }
+        }
+
+        private static GameObject CreateRoadSegment(string name, Vector3 position, Vector3 scale, float yawDegrees)
+        {
+            GameObject road = CreateLandingSurface(name, SurfaceKind.Road, position, scale, new Color(0.1f, 0.105f, 0.11f));
+            road.transform.rotation = Quaternion.Euler(0f, yawDegrees, 0f);
+
+            GameObject stripe = CreateBlock(name + " Center Stripe", position + Vector3.up * 0.12f, new Vector3(Mathf.Max(1f, scale.x * 0.05f), 0.03f, Mathf.Max(1f, scale.z * 0.72f)), new Color(0.92f, 0.86f, 0.52f));
+            stripe.transform.rotation = road.transform.rotation;
+            return road;
+        }
+
+        private static void CreateGuardrail(string name, Vector3 position, Vector3 scale, float yawDegrees)
+        {
+            GameObject rail = CreateBlock(name, position, scale, new Color(0.72f, 0.73f, 0.68f));
+            rail.transform.rotation = Quaternion.Euler(0f, yawDegrees, 0f);
         }
 
         private static void CreateWorldBounds(GameObject aircraft)
@@ -348,23 +384,52 @@ namespace MINgo.EditorTools
         private static GameObject CreatePlayerCar()
         {
             var car = new GameObject("Player Car");
-            car.transform.position = new Vector3(-128f, 1.25f, 28f);
+            car.transform.position = new Vector3(-128f, 0.18f, 28f);
             car.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
 
             var body = car.AddComponent<Rigidbody>();
             body.mass = 950f;
             body.useGravity = true;
+            body.centerOfMass = new Vector3(0f, -0.45f, 0.15f);
 
-            CreateCarPart("Car Body", car.transform, new Vector3(0f, 0.45f, 0f), new Vector3(2.2f, 0.7f, 4.2f), new Color(0.92f, 0.12f, 0.08f));
-            CreateCarPart("Car Cabin", car.transform, new Vector3(0f, 1.0f, -0.28f), new Vector3(1.7f, 0.8f, 1.8f), new Color(0.12f, 0.18f, 0.22f));
-            CreateCarPart("Car Hood Highlight", car.transform, new Vector3(0f, 0.84f, 1.28f), new Vector3(1.8f, 0.08f, 1.2f), new Color(0.98f, 0.26f, 0.18f));
-            CreateCarWheel("Front Left Wheel", car.transform, new Vector3(-1.2f, 0.18f, 1.35f));
-            CreateCarWheel("Front Right Wheel", car.transform, new Vector3(1.2f, 0.18f, 1.35f));
-            CreateCarWheel("Rear Left Wheel", car.transform, new Vector3(-1.2f, 0.18f, -1.35f));
-            CreateCarWheel("Rear Right Wheel", car.transform, new Vector3(1.2f, 0.18f, -1.35f));
+            var chassis = car.AddComponent<BoxCollider>();
+            chassis.center = new Vector3(0f, 0.62f, 0f);
+            chassis.size = new Vector3(2.15f, 1.05f, 4.35f);
+
+            CreateCarPart("Car Body", car.transform, new Vector3(0f, 0.55f, 0f), new Vector3(2.2f, 0.62f, 4.35f), new Color(0.88f, 0.08f, 0.06f));
+            CreateCarPart("Car Cabin", car.transform, new Vector3(0f, 1.02f, -0.3f), new Vector3(1.72f, 0.72f, 1.75f), new Color(0.08f, 0.12f, 0.15f));
+            CreateCarPart("Car White Roof Panel", car.transform, new Vector3(0f, 1.41f, -0.34f), new Vector3(1.62f, 0.08f, 1.82f), new Color(0.92f, 0.92f, 0.87f));
+            CreateCarPart("Car Hood White Stripe", car.transform, new Vector3(0f, 0.9f, 1.16f), new Vector3(0.48f, 0.08f, 1.55f), new Color(0.96f, 0.96f, 0.9f));
+            CreateCarPart("Car Front Bumper", car.transform, new Vector3(0f, 0.43f, 2.27f), new Vector3(2.18f, 0.28f, 0.22f), new Color(0.05f, 0.055f, 0.06f));
+            CreateCarPart("Car Rear Bumper", car.transform, new Vector3(0f, 0.43f, -2.27f), new Vector3(2.18f, 0.28f, 0.22f), new Color(0.05f, 0.055f, 0.06f));
+            CreateCarPart("Car Front Grille", car.transform, new Vector3(0f, 0.65f, 2.41f), new Vector3(1.35f, 0.28f, 0.08f), new Color(0.02f, 0.02f, 0.025f));
+            CreateCarPart("Car Left Headlight", car.transform, new Vector3(-0.73f, 0.75f, 2.43f), new Vector3(0.45f, 0.18f, 0.06f), new Color(0.92f, 0.94f, 0.86f));
+            CreateCarPart("Car Right Headlight", car.transform, new Vector3(0.73f, 0.75f, 2.43f), new Vector3(0.45f, 0.18f, 0.06f), new Color(0.92f, 0.94f, 0.86f));
+            CreateCarPart("Car Left Tail Light", car.transform, new Vector3(-0.78f, 0.72f, -2.43f), new Vector3(0.42f, 0.18f, 0.06f), new Color(0.95f, 0.05f, 0.04f));
+            CreateCarPart("Car Right Tail Light", car.transform, new Vector3(0.78f, 0.72f, -2.43f), new Vector3(0.42f, 0.18f, 0.06f), new Color(0.95f, 0.05f, 0.04f));
+            CreateCarPart("Car Left Side Skirt", car.transform, new Vector3(-1.14f, 0.42f, 0f), new Vector3(0.12f, 0.22f, 3.7f), new Color(0.04f, 0.045f, 0.05f));
+            CreateCarPart("Car Right Side Skirt", car.transform, new Vector3(1.14f, 0.42f, 0f), new Vector3(0.12f, 0.22f, 3.7f), new Color(0.04f, 0.045f, 0.05f));
+
+            Transform frontLeftVisual = CreateCarWheel("Front Left Wheel Visual", car.transform, new Vector3(-1.17f, 0.36f, 1.38f));
+            Transform frontRightVisual = CreateCarWheel("Front Right Wheel Visual", car.transform, new Vector3(1.17f, 0.36f, 1.38f));
+            Transform rearLeftVisual = CreateCarWheel("Rear Left Wheel Visual", car.transform, new Vector3(-1.17f, 0.36f, -1.38f));
+            Transform rearRightVisual = CreateCarWheel("Rear Right Wheel Visual", car.transform, new Vector3(1.17f, 0.36f, -1.38f));
+
+            WheelCollider frontLeftWheel = CreateWheelCollider("Wheel Collider FL", car.transform, new Vector3(-1.17f, 0.36f, 1.38f));
+            WheelCollider frontRightWheel = CreateWheelCollider("Wheel Collider FR", car.transform, new Vector3(1.17f, 0.36f, 1.38f));
+            WheelCollider rearLeftWheel = CreateWheelCollider("Wheel Collider RL", car.transform, new Vector3(-1.17f, 0.36f, -1.38f));
+            WheelCollider rearRightWheel = CreateWheelCollider("Wheel Collider RR", car.transform, new Vector3(1.17f, 0.36f, -1.38f));
 
             var controller = car.AddComponent<ArcadeCarController>();
             controller.acceptsInput = false;
+            controller.frontLeftWheel = frontLeftWheel;
+            controller.frontRightWheel = frontRightWheel;
+            controller.rearLeftWheel = rearLeftWheel;
+            controller.rearRightWheel = rearRightWheel;
+            controller.frontLeftVisual = frontLeftVisual;
+            controller.frontRightVisual = frontRightVisual;
+            controller.rearLeftVisual = rearLeftVisual;
+            controller.rearRightVisual = rearRightVisual;
             return car;
         }
 
@@ -387,17 +452,71 @@ namespace MINgo.EditorTools
             part.transform.localRotation = Quaternion.identity;
             part.transform.localScale = localScale;
             part.GetComponent<Renderer>().sharedMaterial = MakeAtlasMaterial(name + "_Mat", color, WorldAtlasTile.Building);
+            Object.DestroyImmediate(part.GetComponent<Collider>());
         }
 
-        private static void CreateCarWheel(string name, Transform parent, Vector3 localPosition)
+        private static Transform CreateCarWheel(string name, Transform parent, Vector3 localPosition)
         {
             GameObject wheel = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             wheel.name = name;
             wheel.transform.SetParent(parent);
             wheel.transform.localPosition = localPosition;
             wheel.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
-            wheel.transform.localScale = new Vector3(0.42f, 0.22f, 0.42f);
+            wheel.transform.localScale = new Vector3(0.36f, 0.2f, 0.36f);
             wheel.GetComponent<Renderer>().sharedMaterial = MakeMaterial(name + "_Mat", new Color(0.05f, 0.05f, 0.05f));
+            Object.DestroyImmediate(wheel.GetComponent<Collider>());
+            CreateCarWheelHub(name + " Hub", parent, localPosition);
+            return wheel.transform;
+        }
+
+        private static void CreateCarWheelHub(string name, Transform parent, Vector3 localPosition)
+        {
+            GameObject hub = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            hub.name = name;
+            hub.transform.SetParent(parent);
+            hub.transform.localPosition = localPosition;
+            hub.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+            hub.transform.localScale = new Vector3(0.2f, 0.22f, 0.2f);
+            hub.GetComponent<Renderer>().sharedMaterial = MakeMaterial(name + "_Mat", new Color(0.42f, 0.43f, 0.42f));
+            Object.DestroyImmediate(hub.GetComponent<Collider>());
+        }
+
+        private static WheelCollider CreateWheelCollider(string name, Transform parent, Vector3 localPosition)
+        {
+            var wheelObject = new GameObject(name);
+            wheelObject.transform.SetParent(parent);
+            wheelObject.transform.localPosition = localPosition;
+            wheelObject.transform.localRotation = Quaternion.identity;
+            var wheel = wheelObject.AddComponent<WheelCollider>();
+            wheel.mass = 24f;
+            wheel.radius = 0.36f;
+            wheel.wheelDampingRate = 0.8f;
+            wheel.suspensionDistance = 0.18f;
+            wheel.forceAppPointDistance = 0.22f;
+
+            JointSpring spring = wheel.suspensionSpring;
+            spring.spring = 28000f;
+            spring.damper = 4200f;
+            spring.targetPosition = 0.55f;
+            wheel.suspensionSpring = spring;
+
+            WheelFrictionCurve forward = wheel.forwardFriction;
+            forward.extremumSlip = 0.35f;
+            forward.extremumValue = 1f;
+            forward.asymptoteSlip = 0.8f;
+            forward.asymptoteValue = 0.65f;
+            forward.stiffness = 1.25f;
+            wheel.forwardFriction = forward;
+
+            WheelFrictionCurve sideways = wheel.sidewaysFriction;
+            sideways.extremumSlip = 0.25f;
+            sideways.extremumValue = 1f;
+            sideways.asymptoteSlip = 0.55f;
+            sideways.asymptoteValue = 0.72f;
+            sideways.stiffness = 1.35f;
+            wheel.sidewaysFriction = sideways;
+
+            return wheel;
         }
 
         private static FlightHud CreateHud(GameObject aircraft)
@@ -666,7 +785,7 @@ namespace MINgo.EditorTools
                 return WorldAtlasTile.Mountain;
             }
 
-            if (name.Contains("Road") || name.Contains("Runway") || name.Contains("Apron") || name.Contains("Freeway") || name.Contains("Boardwalk") || name.Contains("Pier"))
+            if (name.Contains("Road") || name.Contains("Runway") || name.Contains("Apron") || name.Contains("Freeway") || name.Contains("Boardwalk") || name.Contains("Pier") || name.Contains("Parking") || name.Contains("Stripe") || name.Contains("Bridge") || name.Contains("Guardrail"))
             {
                 return WorldAtlasTile.Runway;
             }

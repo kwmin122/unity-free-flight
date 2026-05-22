@@ -111,8 +111,8 @@ Map conclusions applied:
 
 Car conclusions applied:
 
-- Use a small Rigidbody arcade car first. WheelCollider is the later upgrade path, but it adds tuning work before the free-flight MVP proves the ground loop.
-- `W` accelerates, `S` brakes while moving forward and reverses only after the car slows below a threshold.
+- Superseded the first direct-Rigidbody arcade car after playtest feedback that it felt unstable and could leave the ground.
+- Rebuilt the player car around four Unity WheelColliders, a single chassis collider, lowered Rigidbody center of mass, downforce, anti-roll force, tuned suspension, tuned tire friction, and visual wheel pose sync.
+- `W` accelerates, neutral input applies light coasting/engine braking, and `S` brakes while moving forward before becoming reverse below a low speed threshold.
 - Steering scales down at speed to prevent instant spin.
-- Lateral grip is applied directly so the car feels accessible on keyboard.
-- Add a vehicle switcher so `F`/`Tab` toggles plane/car and retargets the chase camera.
+- Keep the `F`/`Tab` vehicle switcher so the chase camera retargets between plane and car.

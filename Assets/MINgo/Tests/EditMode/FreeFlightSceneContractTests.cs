@@ -16,6 +16,8 @@ namespace MINgo.Tests
     {
         private const string ScenePath = "Assets/Scenes/FreeFlightSandbox.unity";
         private const string WorldAtlasPath = "Assets/MINgo/Art/Textures/world-material-atlas-v1.png";
+        private const string WorldMapConceptPath = "Assets/MINgo/Art/Concepts/world-map-concept-v1.png";
+        private const string CarReferencePath = "Assets/MINgo/Art/Concepts/car-reference-sheet-v1.png";
 
         [OneTimeSetUp]
         public void OpenScene()
@@ -164,10 +166,23 @@ namespace MINgo.Tests
         {
             GameObject car = GameObject.Find("Player Car");
             PlayerVehicleSwitcher switcher = Object.FindAnyObjectByType<PlayerVehicleSwitcher>();
+            WheelCollider[] wheelColliders = car == null
+                ? new WheelCollider[0]
+                : car.GetComponentsInChildren<WheelCollider>();
 
             Assert.That(car, Is.Not.Null);
             Assert.That(car.GetComponent<Rigidbody>(), Is.Not.Null);
+            Assert.That(car.GetComponent<BoxCollider>(), Is.Not.Null);
             Assert.That(car.GetComponent<ArcadeCarController>(), Is.Not.Null);
+            Assert.That(wheelColliders, Has.Length.EqualTo(4));
+            Assert.That(car.transform.Find("Wheel Collider FL"), Is.Not.Null);
+            Assert.That(car.transform.Find("Wheel Collider FR"), Is.Not.Null);
+            Assert.That(car.transform.Find("Wheel Collider RL"), Is.Not.Null);
+            Assert.That(car.transform.Find("Wheel Collider RR"), Is.Not.Null);
+            AssertCarVisualOnlyPart(car.transform, "Car Body");
+            AssertCarVisualOnlyPart(car.transform, "Car Cabin");
+            AssertCarVisualOnlyPart(car.transform, "Front Left Wheel Visual");
+            AssertCarVisualOnlyPart(car.transform, "Front Right Wheel Visual");
             Assert.That(switcher, Is.Not.Null);
             Assert.That(switcher.aircraft, Is.Not.Null);
             Assert.That(switcher.car, Is.Not.Null);
@@ -217,6 +232,18 @@ namespace MINgo.Tests
             AssertUsesAtlas("Field Tree Line", atlas);
         }
 
+        [Test]
+        public void ProjectContainsImagegenMapAndCarReferenceAssets()
+        {
+            Texture2D mapConcept = AssetDatabase.LoadAssetAtPath<Texture2D>(WorldMapConceptPath);
+            Texture2D carReference = AssetDatabase.LoadAssetAtPath<Texture2D>(CarReferencePath);
+
+            Assert.That(mapConcept, Is.Not.Null);
+            Assert.That(mapConcept.width, Is.GreaterThanOrEqualTo(1024));
+            Assert.That(carReference, Is.Not.Null);
+            Assert.That(carReference.width, Is.GreaterThanOrEqualTo(1024));
+        }
+
         private static void AssertUsesAtlas(string objectName, Texture2D atlas)
         {
             GameObject sceneObject = GameObject.Find(objectName);
@@ -246,6 +273,13 @@ namespace MINgo.Tests
             Assert.That(part, Is.Not.Null, childName);
             Assert.That(part.GetComponent<Collider>(), Is.Not.Null, childName);
             Assert.That(part.GetComponent<Renderer>().enabled, Is.False, childName);
+        }
+
+        private static void AssertCarVisualOnlyPart(Transform car, string childName)
+        {
+            Transform part = car.Find(childName);
+            Assert.That(part, Is.Not.Null, childName);
+            Assert.That(part.GetComponent<Collider>(), Is.Null, childName);
         }
     }
 }

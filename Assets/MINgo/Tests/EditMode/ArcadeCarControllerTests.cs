@@ -47,5 +47,45 @@ namespace MINgo.Tests
             Assert.That(slow, Is.GreaterThan(fast));
             Assert.That(fast, Is.GreaterThan(0f));
         }
+
+        [Test]
+        public void CalculateMotorTorque_CutsForwardTorqueAtMaxSpeed()
+        {
+            float torque = ArcadeCarController.CalculateMotorTorque(
+                DriveMode.Forward,
+                forwardSpeed: 40f,
+                maxForwardSpeed: 34f,
+                maxReverseSpeed: 9f,
+                motorTorque: 950f,
+                reverseTorque: 420f);
+
+            Assert.That(torque, Is.EqualTo(0f).Within(0.001f));
+        }
+
+        [Test]
+        public void CalculateBrakeTorque_UsesHandbrakeWhenHeld()
+        {
+            float torque = ArcadeCarController.CalculateBrakeTorque(
+                DriveMode.Forward,
+                handbrake: true,
+                brakeTorque: 2600f,
+                coastBrakeTorque: 260f,
+                handbrakeTorque: 4200f);
+
+            Assert.That(torque, Is.EqualTo(4200f).Within(0.001f));
+        }
+
+        [Test]
+        public void CalculateBrakeTorque_UsesEngineBrakingWhenCoasting()
+        {
+            float torque = ArcadeCarController.CalculateBrakeTorque(
+                DriveMode.Coasting,
+                handbrake: false,
+                brakeTorque: 2600f,
+                coastBrakeTorque: 260f,
+                handbrakeTorque: 4200f);
+
+            Assert.That(torque, Is.EqualTo(260f).Within(0.001f));
+        }
     }
 }

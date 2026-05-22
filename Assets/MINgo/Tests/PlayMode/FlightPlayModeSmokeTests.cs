@@ -1,5 +1,6 @@
 using System.Collections;
 using MINgo.Flight;
+using MINgo.Vehicles;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -13,6 +14,7 @@ namespace MINgo.Tests
         public void TearDown()
         {
             FlightInputReader.ClearInputOverrideForTests();
+            VehicleInputReader.ClearInputOverrideForTests();
         }
 
         [UnityTest]
@@ -39,6 +41,33 @@ namespace MINgo.Tests
             Assert.That(aircraft.SpeedMetersPerSecond, Is.GreaterThan(12f));
             Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Crashed));
             Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Submerged));
+        }
+
+        [UnityTest]
+        public IEnumerator CarAccelerationStaysGrounded()
+        {
+            yield return LoadFreeFlightScene();
+            ArcadeAircraftController aircraft = FindAircraft();
+            ArcadeCarController car = Object.FindFirstObjectByType<ArcadeCarController>();
+            Assert.That(car, Is.Not.Null);
+
+            aircraft.acceptsInput = false;
+            car.acceptsInput = true;
+            VehicleInputReader.SetInputOverrideForTests(new VehicleInputSnapshot(
+                throttle: 1f,
+                steer: 0f,
+                handbrake: false,
+                switchVehicle: false));
+
+            for (int i = 0; i < 220; i++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            Assert.That(car.SpeedMetersPerSecond, Is.GreaterThan(4f));
+            Assert.That(car.GroundedWheelCount, Is.GreaterThanOrEqualTo(3));
+            Assert.That(car.transform.position.y, Is.LessThan(2.5f));
+            Assert.That(Mathf.Abs(car.RollDegrees), Is.LessThan(18f));
         }
 
         [UnityTest]

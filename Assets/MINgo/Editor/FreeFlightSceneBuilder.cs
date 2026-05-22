@@ -68,6 +68,7 @@ namespace MINgo.EditorTools
                 new Color(0.36f, 0.52f, 0.4f),
                 WorldAtlasTile.Grass);
 
+            CreateSeoulWorldSlice();
             CreateAirport();
             CreateCoastline();
             CreateRoads();
@@ -101,6 +102,140 @@ namespace MINgo.EditorTools
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddSceneToBuildSettings(ScenePath);
+        }
+
+        private static void CreateSeoulWorldSlice()
+        {
+            CreateSeoulHangangAxis();
+            CreateYeouidoDistrict();
+            CreateBanpoNodeulZone();
+            CreateNamsanJongnoDistrict();
+            CreateGangnamDistrict();
+            CreateJamsilDistrict();
+        }
+
+        private static void CreateSeoulHangangAxis()
+        {
+            GameObject westRiver = CreateLandingSurface("Hangang River West", SurfaceKind.Water, new Vector3(-210f, -0.07f, 1080f), new Vector3(720f, 0.7f, 130f), new Color(0.09f, 0.33f, 0.58f));
+            westRiver.GetComponent<Collider>().isTrigger = true;
+            GameObject eastRiver = CreateLandingSurface("Hangang River East", SurfaceKind.Water, new Vector3(470f, -0.07f, 1080f), new Vector3(720f, 0.7f, 130f), new Color(0.08f, 0.31f, 0.55f));
+            eastRiver.GetComponent<Collider>().isTrigger = true;
+
+            CreateLandingSurface("Seoul Hangang North Park", SurfaceKind.Field, new Vector3(90f, 0.02f, 1166f), new Vector3(970f, 0.14f, 42f), new Color(0.2f, 0.45f, 0.25f));
+            CreateLandingSurface("Seoul Hangang South Park", SurfaceKind.Field, new Vector3(90f, 0.02f, 994f), new Vector3(970f, 0.14f, 42f), new Color(0.18f, 0.42f, 0.23f));
+            CreateSeoulRoad("Gangbyeonbuk-ro Riverside Road", new Vector3(80f, 0.1f, 1215f), new Vector3(1010f, 0.18f, 16f), 0f);
+            CreateSeoulRoad("Olympic-daero Riverside Road", new Vector3(80f, 0.1f, 945f), new Vector3(1010f, 0.18f, 16f), 0f);
+
+            CreateSeoulBridge("Mapo Bridge Road", new Vector3(-190f, 5.4f, 1080f), new Vector3(18f, 0.28f, 260f), 0f);
+            CreateSeoulBridge("Banpo Bridge Road", new Vector3(130f, 5.8f, 1080f), new Vector3(20f, 0.28f, 280f), 0f);
+            CreateSeoulBridge("Dongjak Bridge Road", new Vector3(300f, 5.6f, 1080f), new Vector3(18f, 0.28f, 255f), 0f);
+            CreateSeoulBridge("Jamsil Bridge Road", new Vector3(610f, 5.8f, 1080f), new Vector3(18f, 0.28f, 265f), 0f);
+
+            CreateSeoulTreeRow("Seoul Hangang North Tree Row", new Vector3(-385f, 0.2f, 1188f), 16, new Vector3(48f, 0f, 0f));
+            CreateSeoulTreeRow("Seoul Hangang South Tree Row", new Vector3(-385f, 0.2f, 968f), 16, new Vector3(48f, 0f, 0f));
+        }
+
+        private static void CreateYeouidoDistrict()
+        {
+            CreateLandingSurface("Yeouido Island Park", SurfaceKind.Field, new Vector3(-210f, 0.05f, 1078f), new Vector3(210f, 0.22f, 74f), new Color(0.22f, 0.48f, 0.24f));
+            CreateSeoulRoad("Seoul Yeouido Ring Road North", new Vector3(-210f, 0.16f, 1123f), new Vector3(220f, 0.18f, 10f), 0f);
+            CreateSeoulRoad("Seoul Yeouido Ring Road South", new Vector3(-210f, 0.16f, 1033f), new Vector3(220f, 0.18f, 10f), 0f);
+            CreateSeoulRoad("Seoul Yeouido Finance Avenue", new Vector3(-210f, 0.17f, 1078f), new Vector3(14f, 0.18f, 92f), 0f);
+
+            CreateSeoulGlassTower("Yeouido 63 Finance Tower", new Vector3(-318f, 76f, 1068f), new Vector3(18f, 152f, 18f), new Color(0.73f, 0.63f, 0.38f));
+            CreateSeoulGlassTower("Seoul Yeouido IFC Tower 0", new Vector3(-260f, 54f, 1110f), new Vector3(22f, 108f, 18f), new Color(0.32f, 0.48f, 0.58f));
+            CreateSeoulGlassTower("Seoul Yeouido IFC Tower 1", new Vector3(-235f, 42f, 1110f), new Vector3(18f, 84f, 18f), new Color(0.28f, 0.42f, 0.52f));
+            CreateSeoulGlassTower("Seoul Yeouido Securities Tower", new Vector3(-175f, 40f, 1112f), new Vector3(20f, 80f, 22f), new Color(0.38f, 0.48f, 0.54f));
+            CreateSeoulApartmentSlab("Seoul Yeouido Riverside Apartment 0", new Vector3(-140f, 18f, 1038f), new Vector3(36f, 36f, 14f), new Color(0.62f, 0.63f, 0.58f));
+            CreateSeoulApartmentSlab("Seoul Yeouido Riverside Apartment 1", new Vector3(-105f, 20f, 1118f), new Vector3(38f, 40f, 14f), new Color(0.58f, 0.6f, 0.58f));
+            CreateBlock("Seoul Yeouido National Assembly Dome", new Vector3(-325f, 14f, 1120f), new Vector3(34f, 10f, 28f), new Color(0.64f, 0.62f, 0.55f));
+            CreateSphereBlock("Seoul Yeouido National Assembly Roof", new Vector3(-325f, 23f, 1120f), new Vector3(17f, 7f, 14f), new Color(0.42f, 0.55f, 0.48f), WorldAtlasTile.Building);
+            CreateBlock("Seoul Yeouido Broadcast Mast", new Vector3(-95f, 43f, 1060f), new Vector3(5f, 86f, 5f), new Color(0.58f, 0.6f, 0.62f));
+        }
+
+        private static void CreateBanpoNodeulZone()
+        {
+            CreateLandingSurface("Nodeul Island Park", SurfaceKind.Field, new Vector3(72f, 0.08f, 1082f), new Vector3(84f, 0.18f, 38f), new Color(0.28f, 0.52f, 0.27f));
+            CreateBlock("Seoul Nodeul Performance Hall", new Vector3(68f, 6f, 1080f), new Vector3(30f, 12f, 18f), new Color(0.44f, 0.42f, 0.38f));
+            CreateLandingSurface("Seoul Sevit Floating Island 0", SurfaceKind.Field, new Vector3(160f, 0.11f, 1058f), new Vector3(32f, 0.18f, 18f), new Color(0.52f, 0.58f, 0.52f));
+            CreateLandingSurface("Seoul Sevit Floating Island 1", SurfaceKind.Field, new Vector3(190f, 0.11f, 1092f), new Vector3(26f, 0.18f, 16f), new Color(0.5f, 0.56f, 0.5f));
+            CreateBlock("Seoul Banpo Fountain Light 0", new Vector3(118f, 9f, 949f), new Vector3(4f, 18f, 4f), new Color(0.6f, 0.78f, 0.96f));
+            CreateBlock("Seoul Banpo Fountain Light 1", new Vector3(142f, 9f, 1211f), new Vector3(4f, 18f, 4f), new Color(0.6f, 0.78f, 0.96f));
+            CreateSeoulRoad("Seoul Banpo Riverside Access Road", new Vector3(188f, 0.16f, 965f), new Vector3(105f, 0.18f, 10f), -22f);
+        }
+
+        private static void CreateNamsanJongnoDistrict()
+        {
+            GameObject ridge = CreateBlock("Namsan Ridge", new Vector3(5f, 42f, 1360f), new Vector3(210f, 84f, 120f), new Color(0.24f, 0.37f, 0.24f));
+            ridge.transform.rotation = Quaternion.Euler(0f, -12f, 0f);
+            CreateBlock("N Seoul Tower", new Vector3(0f, 132f, 1360f), new Vector3(10f, 78f, 10f), new Color(0.82f, 0.84f, 0.78f));
+            CreateBlock("N Seoul Tower Observatory", new Vector3(0f, 176f, 1360f), new Vector3(26f, 10f, 26f), new Color(0.18f, 0.22f, 0.26f));
+            CreateBlock("N Seoul Tower Antenna", new Vector3(0f, 209f, 1360f), new Vector3(3f, 58f, 3f), new Color(0.9f, 0.9f, 0.86f));
+
+            CreateSeoulRoad("Seoul Jongno Gwanghwamun Axis", new Vector3(-155f, 0.14f, 1340f), new Vector3(16f, 0.18f, 190f), 0f);
+            CreateBlock("Seoul Jongno Gwanghwamun Plaza", new Vector3(-155f, 0.2f, 1440f), new Vector3(52f, 0.2f, 74f), new Color(0.46f, 0.45f, 0.4f));
+            CreateBlock("Seoul Jongno Palace Gate", new Vector3(-155f, 13f, 1484f), new Vector3(42f, 18f, 14f), new Color(0.48f, 0.22f, 0.15f));
+            CreateBlock("Seoul Jongno City Hall", new Vector3(-248f, 16f, 1312f), new Vector3(48f, 32f, 28f), new Color(0.5f, 0.55f, 0.56f));
+
+            for (int i = 0; i < 10; i++)
+            {
+                float x = -305f + (i % 5) * 34f;
+                float z = 1248f + (i / 5) * 42f;
+                float h = 18f + (i % 4) * 5f;
+                CreateSeoulApartmentSlab("Seoul Jongno Lowrise Block " + i, new Vector3(x, h * 0.5f, z), new Vector3(24f, h, 20f), new Color(0.56f, 0.56f, 0.52f));
+            }
+        }
+
+        private static void CreateGangnamDistrict()
+        {
+            CreateSeoulRoad("Gangnam Boulevard", new Vector3(250f, 0.16f, 805f), new Vector3(420f, 0.18f, 18f), 0f);
+            CreateSeoulRoad("Seoul Gangnam Teheran-ro", new Vector3(250f, 0.18f, 760f), new Vector3(390f, 0.18f, 14f), 0f);
+            CreateSeoulRoad("Seoul Gangnam North-South Road 0", new Vector3(110f, 0.17f, 820f), new Vector3(12f, 0.18f, 170f), 0f);
+            CreateSeoulRoad("Seoul Gangnam North-South Road 1", new Vector3(230f, 0.17f, 820f), new Vector3(12f, 0.18f, 170f), 0f);
+            CreateSeoulRoad("Seoul Gangnam North-South Road 2", new Vector3(350f, 0.17f, 820f), new Vector3(12f, 0.18f, 170f), 0f);
+
+            for (int i = 0; i < 24; i++)
+            {
+                int row = i / 6;
+                int col = i % 6;
+                float height = 30f + ((i * 17) % 70);
+                Vector3 position = new Vector3(70f + col * 54f, height * 0.5f, 705f + row * 55f);
+                Vector3 scale = new Vector3(22f + (i % 3) * 4f, height, 20f + (i % 2) * 8f);
+                if (i % 3 == 0)
+                {
+                    CreateSeoulGlassTower("Seoul Gangnam Glass Office " + i, position, scale, new Color(0.28f, 0.42f, 0.52f));
+                }
+                else
+                {
+                    CreateSeoulApartmentSlab("Seoul Gangnam Mixed Use Block " + i, position, scale, new Color(0.55f, 0.58f, 0.56f));
+                }
+            }
+
+            CreateBlock("Seoul Gangnam COEX Podium", new Vector3(420f, 10f, 850f), new Vector3(88f, 20f, 48f), new Color(0.44f, 0.45f, 0.44f));
+            CreateBlock("Seoul Gangnam Trade Tower", new Vector3(472f, 58f, 846f), new Vector3(20f, 116f, 20f), new Color(0.3f, 0.43f, 0.5f));
+        }
+
+        private static void CreateJamsilDistrict()
+        {
+            CreateLandingSurface("Seokchon Lake East", SurfaceKind.Water, new Vector3(620f, -0.04f, 790f), new Vector3(108f, 0.4f, 52f), new Color(0.07f, 0.27f, 0.48f)).GetComponent<Collider>().isTrigger = true;
+            CreateLandingSurface("Seokchon Lake West", SurfaceKind.Water, new Vector3(520f, -0.04f, 790f), new Vector3(90f, 0.4f, 48f), new Color(0.08f, 0.29f, 0.5f)).GetComponent<Collider>().isTrigger = true;
+            CreateSeoulRoad("Seoul Jamsil Lake Ring North", new Vector3(570f, 0.15f, 830f), new Vector3(220f, 0.18f, 10f), 0f);
+            CreateSeoulRoad("Seoul Jamsil Lake Ring South", new Vector3(570f, 0.15f, 742f), new Vector3(220f, 0.18f, 10f), 0f);
+            CreateSeoulRoad("Seoul Jamsil Sports Road", new Vector3(675f, 0.15f, 875f), new Vector3(135f, 0.18f, 12f), 20f);
+
+            CreateBlock("Jamsil Lotte World Tower", new Vector3(585f, 105f, 850f), new Vector3(20f, 210f, 20f), new Color(0.66f, 0.78f, 0.84f));
+            CreateBlock("Seoul Jamsil Lotte Tower Crown", new Vector3(585f, 218f, 850f), new Vector3(14f, 22f, 14f), new Color(0.78f, 0.86f, 0.9f));
+            CreateBlock("Seoul Jamsil Lotte Mall Podium", new Vector3(545f, 12f, 845f), new Vector3(84f, 24f, 52f), new Color(0.5f, 0.48f, 0.43f));
+
+            for (int i = 0; i < 12; i++)
+            {
+                float height = 22f + (i % 5) * 8f;
+                Vector3 position = new Vector3(492f + (i % 4) * 52f, height * 0.5f, 690f + (i / 4) * 48f);
+                CreateSeoulApartmentSlab("Seoul Jamsil Apartment Cluster " + i, position, new Vector3(32f, height, 16f), new Color(0.6f, 0.61f, 0.57f));
+            }
+
+            CreateBlock("Seoul Jamsil Stadium Bowl", new Vector3(720f, 9f, 806f), new Vector3(90f, 18f, 68f), new Color(0.56f, 0.58f, 0.56f));
+            CreateBlock("Seoul Jamsil Stadium Field", new Vector3(720f, 18.2f, 806f), new Vector3(62f, 1f, 42f), new Color(0.12f, 0.42f, 0.14f));
         }
 
         private static void CreateAirport()
@@ -291,6 +426,83 @@ namespace MINgo.EditorTools
                 Vector3 offset = new Vector3(i * 5f, 0f, (i % 2) * 6f);
                 CreateCylinderBlock(name + " Trunk " + i, basePosition + offset + new Vector3(0f, 3.2f, 0f), new Vector3(1.1f, 3.2f, 1.1f), new Color(0.34f, 0.23f, 0.13f), WorldAtlasTile.Trees);
                 CreateSphereBlock(name + " Canopy " + i, basePosition + offset + new Vector3(0f, 8f, 0f), new Vector3(7f, 5f, 7f), new Color(0.1f, 0.31f, 0.14f), WorldAtlasTile.Trees);
+            }
+        }
+
+        private static GameObject CreateSeoulRoad(string name, Vector3 position, Vector3 scale, float yawDegrees)
+        {
+            GameObject road = CreateLandingSurface(name, SurfaceKind.Road, position, scale, new Color(0.1f, 0.105f, 0.11f));
+            road.transform.rotation = Quaternion.Euler(0f, yawDegrees, 0f);
+
+            bool eastWest = scale.x >= scale.z;
+            Vector3 stripeScale = eastWest
+                ? new Vector3(Mathf.Max(1f, scale.x * 0.7f), 0.03f, 0.9f)
+                : new Vector3(0.9f, 0.03f, Mathf.Max(1f, scale.z * 0.7f));
+            GameObject stripe = CreateVisualBlock(name + " Lane Marking", position + Vector3.up * 0.12f, stripeScale, new Color(0.9f, 0.84f, 0.48f));
+            stripe.transform.rotation = road.transform.rotation;
+            return road;
+        }
+
+        private static GameObject CreateSeoulBridge(string name, Vector3 position, Vector3 scale, float yawDegrees)
+        {
+            GameObject bridge = CreateSeoulRoad(name, position, scale, yawDegrees);
+            float supportSpacing = Mathf.Max(42f, Mathf.Max(scale.x, scale.z) * 0.28f);
+            bool northSouth = scale.z >= scale.x;
+            Vector3 supportAxis = northSouth
+                ? bridge.transform.forward
+                : bridge.transform.right;
+
+            for (int i = -1; i <= 1; i++)
+            {
+                Vector3 supportPosition = position + supportAxis * (supportSpacing * i);
+                CreateBlock(name + " Support " + (i + 1), new Vector3(supportPosition.x, 2.2f, supportPosition.z), new Vector3(5f, 4.4f, 5f), new Color(0.48f, 0.49f, 0.47f));
+            }
+
+            CreateGuardrail(name + " West Guardrail", position + bridge.transform.right * -((scale.x * 0.5f) + 1.2f) + Vector3.up * 0.85f, new Vector3(1.4f, 1.2f, Mathf.Max(12f, scale.z)), yawDegrees);
+            CreateGuardrail(name + " East Guardrail", position + bridge.transform.right * ((scale.x * 0.5f) + 1.2f) + Vector3.up * 0.85f, new Vector3(1.4f, 1.2f, Mathf.Max(12f, scale.z)), yawDegrees);
+            return bridge;
+        }
+
+        private static void CreateSeoulGlassTower(string name, Vector3 position, Vector3 scale, Color color)
+        {
+            CreateBlock(name, position, scale, color);
+            float topY = position.y + scale.y * 0.5f;
+            float frontZ = position.z + scale.z * 0.51f;
+            float rightX = position.x + scale.x * 0.51f;
+            float bandHeight = Mathf.Max(1.2f, scale.y * 0.035f);
+
+            for (int i = 0; i < 4; i++)
+            {
+                float y = position.y - scale.y * 0.28f + i * scale.y * 0.18f;
+                CreateVisualBlock(name + " Window Band Front " + i, new Vector3(position.x, y, frontZ), new Vector3(scale.x * 0.86f, bandHeight, 0.45f), new Color(0.1f, 0.22f, 0.32f));
+                CreateVisualBlock(name + " Window Band Right " + i, new Vector3(rightX, y, position.z), new Vector3(0.45f, bandHeight, scale.z * 0.82f), new Color(0.1f, 0.22f, 0.32f));
+            }
+
+            CreateBlock(name + " Roof Cap", new Vector3(position.x, topY + 0.7f, position.z), new Vector3(scale.x * 1.05f, 1.2f, scale.z * 1.05f), new Color(0.12f, 0.14f, 0.15f));
+            CreateVisualBlock(name + " Rooftop Mechanical", new Vector3(position.x + scale.x * 0.18f, topY + 2.1f, position.z - scale.z * 0.18f), new Vector3(scale.x * 0.3f, 1.8f, scale.z * 0.25f), new Color(0.18f, 0.19f, 0.2f));
+        }
+
+        private static void CreateSeoulApartmentSlab(string name, Vector3 position, Vector3 scale, Color color)
+        {
+            CreateBlock(name, position, scale, color);
+            float frontZ = position.z + scale.z * 0.51f;
+            int stripCount = Mathf.Clamp(Mathf.RoundToInt(scale.y / 14f), 2, 6);
+            for (int i = 0; i < stripCount; i++)
+            {
+                float y = position.y - scale.y * 0.35f + i * (scale.y * 0.7f / Mathf.Max(1, stripCount - 1));
+                CreateVisualBlock(name + " Balcony Strip " + i, new Vector3(position.x, y, frontZ), new Vector3(scale.x * 0.82f, 0.9f, 0.38f), new Color(0.2f, 0.27f, 0.3f));
+            }
+
+            CreateVisualBlock(name + " Rooftop Line", new Vector3(position.x, position.y + scale.y * 0.5f + 0.35f, position.z), new Vector3(scale.x * 0.94f, 0.7f, scale.z * 0.9f), new Color(0.32f, 0.33f, 0.32f));
+        }
+
+        private static void CreateSeoulTreeRow(string name, Vector3 start, int count, Vector3 step)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                Vector3 basePosition = start + step * i;
+                CreateCylinderBlock(name + " " + i + " Trunk", basePosition + new Vector3(0f, 3.5f, 0f), new Vector3(0.8f, 3.5f, 0.8f), new Color(0.34f, 0.22f, 0.12f), WorldAtlasTile.Trees);
+                CreateSphereBlock(name + " " + i + " Canopy", basePosition + new Vector3(0f, 8f, 0f), new Vector3(6f, 4f, 6f), new Color(0.1f, 0.32f, 0.15f), WorldAtlasTile.Trees);
             }
         }
 
@@ -796,7 +1008,7 @@ namespace MINgo.EditorTools
 
         private static WorldAtlasTile GetBlockTile(string name)
         {
-            if (name.Contains("City") || name.Contains("Hangar") || name.Contains("Tower") || name.Contains("Barracks") || name.Contains("Terminal") || name.Contains("Downtown") || name.Contains("Condo") || name.Contains("Retail") || name.Contains("Window"))
+            if (name.Contains("City") || name.Contains("Hangar") || name.Contains("Tower") || name.Contains("Barracks") || name.Contains("Terminal") || name.Contains("Downtown") || name.Contains("Condo") || name.Contains("Retail") || name.Contains("Window") || name.Contains("Seoul") || name.Contains("Apartment") || name.Contains("Finance") || name.Contains("Lotte") || name.Contains("Gangnam") || name.Contains("Yeouido") || name.Contains("Jamsil") || name.Contains("Jongno"))
             {
                 return WorldAtlasTile.Building;
             }

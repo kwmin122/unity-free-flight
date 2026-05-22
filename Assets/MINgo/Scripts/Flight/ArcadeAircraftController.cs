@@ -5,7 +5,7 @@ namespace MINgo.Flight
     [RequireComponent(typeof(Rigidbody))]
     public sealed class ArcadeAircraftController : MonoBehaviour
     {
-        public float maxThrust = 85f;
+        public float maxThrust = 52f;
         public float lift = 0.55f;
         public float zeroLiftAngle = -2f;
         public float liftSlope = 0.08f;
@@ -15,17 +15,20 @@ namespace MINgo.Flight
         public float rollTorque = 55f;
         public float yawTorque = 18f;
         public float stabilization = 4.5f;
-        public float autoLevel = 6f;
-        public float autoLevelRotationRate = 2f;
+        public float autoLevel = 8f;
+        public float autoLevelRotationRate = 2.6f;
         public float assistedBankAngle = 22f;
         public float bankAssistResponse = 24f;
         public float turnYawAssist = 0.45f;
         public float takeoffAssistPitch = 0.3f;
         public float takeoffAssistStart01 = 0.82f;
+        public float takeoffLiftAssist = 90f;
         public float maxLiftForce = 95f;
         public float speedDrag = 0.012f;
         public float inducedDrag = 0.04f;
         public float airbrakeDrag = 0.01f;
+        public float slowdownDescentAcceleration = 18f;
+        public float slowdownPitchDamping = 0.55f;
         public float idleCoastDrag = 0.006f;
         public float groundBrake = 16f;
         public float takeoffSpeed = 22f;
@@ -38,6 +41,19 @@ namespace MINgo.Flight
 
         public float Throttle01 { get; private set; }
         public float SpeedMetersPerSecond => body == null ? 0f : body.linearVelocity.magnitude;
+        public float ForwardSpeedMetersPerSecond
+        {
+            get
+            {
+                if (body == null)
+                {
+                    return 0f;
+                }
+
+                return Mathf.Max(0f, transform.InverseTransformDirection(body.linearVelocity).z);
+            }
+        }
+
         public float AltitudeMeters => Mathf.Max(0f, transform.position.y);
         public float AngleOfAttackDegrees { get; private set; }
         public float LiftCoefficient { get; private set; }
@@ -97,11 +113,20 @@ namespace MINgo.Flight
             }
 
             body.AddForce(liftForce, ForceMode.Force);
+            if (Throttle01 > 0.85f && forwardSpeed > 8f && AltitudeMeters < 12f)
+            {
+                body.AddForce(Vector3.up * takeoffLiftAssist, ForceMode.Acceleration);
+            }
+
             body.AddForce(FlightAerodynamics.CalculateDragForce(velocity, speedDrag, inducedDrag, LiftCoefficient), ForceMode.Force);
             body.AddForce(CalculateIdleCoastDrag(velocity, input.ThrottleDelta, hasGroundContact, idleCoastDrag), ForceMode.Force);
             if (input.ThrottleDelta < -0.05f && !hasGroundContact && velocity.sqrMagnitude > 1f)
             {
                 body.AddForce(-velocity.normalized * (velocity.sqrMagnitude * airbrakeDrag), ForceMode.Force);
+                body.AddForce(Vector3.down * slowdownDescentAcceleration, ForceMode.Acceleration);
+                Vector3 localAngularVelocity = transform.InverseTransformDirection(body.angularVelocity);
+                localAngularVelocity.x *= slowdownPitchDamping;
+                body.angularVelocity = transform.TransformDirection(localAngularVelocity);
             }
 
             float controlAuthority = Mathf.Lerp(0.35f, 1f, speed01);

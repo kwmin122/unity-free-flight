@@ -372,10 +372,15 @@ namespace MINgo.EditorTools
             CreateAircraftPart("Right Float Strut Rear", aircraft.transform, new Vector3(0.78f, -0.45f, -1.45f), new Vector3(0.12f, 0.85f, 0.12f), new Color(0.55f, 0.57f, 0.56f));
 
             var controller = aircraft.AddComponent<ArcadeAircraftController>();
+            controller.maxThrust = 52f;
             controller.stabilization = 4.5f;
-            controller.autoLevel = 6f;
-            controller.autoLevelRotationRate = 2f;
+            controller.autoLevel = 8f;
+            controller.autoLevelRotationRate = 2.6f;
             controller.assistedBankAngle = 22f;
+            controller.turnYawAssist = 0.45f;
+            controller.takeoffLiftAssist = 90f;
+            controller.slowdownDescentAcceleration = 18f;
+            controller.slowdownPitchDamping = 0.55f;
             controller.throttleChangeRate = 3.2f;
             aircraft.AddComponent<LandingStateMachine>();
             return aircraft;
@@ -427,7 +432,7 @@ namespace MINgo.EditorTools
             controller.wheelMotorTorqueScale = 0f;
             controller.coastBrakeTorque = 0f;
             controller.driveAssistAcceleration = 92f;
-            controller.reverseAssistAcceleration = 62f;
+            controller.reverseAssistAcceleration = 75f;
             controller.maxSteerDegrees = 32f;
             controller.fullSteerSpeed = 5f;
             controller.reducedSteerSpeed = 22f;
@@ -435,8 +440,8 @@ namespace MINgo.EditorTools
             controller.reverseSteerScale = 0.65f;
             controller.neutralCoastAcceleration = 2.8f;
             controller.directionChangeBrakeAcceleration = 14f;
-            controller.steeringYawAcceleration = 58f;
-            controller.handbrakeYawAcceleration = 260f;
+            controller.steeringYawRateDegrees = 14f;
+            controller.handbrakeYawAcceleration = 200f;
             controller.handbrakeMinimumSpeed = 8f;
             controller.handbrakeMaximumAssistSpeed = 12f;
             controller.groundStickAcceleration = 18f;

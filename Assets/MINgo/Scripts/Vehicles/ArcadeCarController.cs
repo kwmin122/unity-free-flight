@@ -28,7 +28,7 @@ namespace MINgo.Vehicles
         public float coastBrakeTorque;
         public float handbrakeTorque = 4200f;
         public float driveAssistAcceleration = 92f;
-        public float reverseAssistAcceleration = 62f;
+        public float reverseAssistAcceleration = 75f;
         public float maxForwardSpeed = 34f;
         public float maxReverseSpeed = 9f;
         public float maxSteerDegrees = 28f;
@@ -38,8 +38,8 @@ namespace MINgo.Vehicles
         public float reverseSteerScale = 0.65f;
         public float neutralCoastAcceleration = 2.8f;
         public float directionChangeBrakeAcceleration = 14f;
-        public float steeringYawAcceleration = 58f;
-        public float handbrakeYawAcceleration = 260f;
+        public float steeringYawRateDegrees = 14f;
+        public float handbrakeYawAcceleration = 200f;
         public float handbrakeMinimumSpeed = 8f;
         public float handbrakeMaximumAssistSpeed = 12f;
         public float groundStickAcceleration = 18f;
@@ -305,7 +305,8 @@ namespace MINgo.Vehicles
                 return;
             }
 
-            body.AddTorque(Vector3.up * (input.Steer * steeringYawAcceleration * speedBlend), ForceMode.Acceleration);
+            float yawDelta = input.Steer * steeringYawRateDegrees * speedBlend * Time.fixedDeltaTime;
+            body.MoveRotation(Quaternion.Euler(0f, yawDelta, 0f) * body.rotation);
         }
 
         private void ApplyHandbrakeTurnAssist(VehicleInputSnapshot input)

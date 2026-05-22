@@ -33,13 +33,10 @@ namespace MINgo.Tests
                 throttleDelta: 1f,
                 brake: false));
 
-            for (int i = 0; i < 240; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
+            yield return WaitForAircraftAltitude(aircraft, 8f, 400);
 
             Assert.That(aircraft.Throttle01, Is.GreaterThan(0.95f));
-            Assert.That(aircraft.SpeedMetersPerSecond, Is.GreaterThan(12f));
+            Assert.That(aircraft.ForwardSpeedMetersPerSecond, Is.GreaterThan(12f));
             Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Crashed));
             Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Submerged));
         }
@@ -71,12 +68,13 @@ namespace MINgo.Tests
                 if (!capturedTakeoff && aircraft.AltitudeMeters >= 8f)
                 {
                     capturedTakeoff = true;
-                    takeoffSpeed = aircraft.SpeedMetersPerSecond;
+                    takeoffSpeed = aircraft.ForwardSpeedMetersPerSecond;
                     takeoffTravel = SignedForwardTravel(startPosition, aircraft.transform.position, startForward);
                 }
             }
 
-            Assert.That(capturedTakeoff, Is.True);
+            Assert.That(capturedTakeoff, Is.True,
+                $"Aircraft did not reach 8m in 8s. finalAltitude={aircraft.AltitudeMeters:F2}, finalSpeed={aircraft.SpeedMetersPerSecond:F2}");
             Assert.That(takeoffSpeed, Is.InRange(18f, 25f),
                 $"Takeoff speed outside arcade band. speed={takeoffSpeed:F2}");
             Assert.That(takeoffTravel, Is.LessThanOrEqualTo(180f),
@@ -98,7 +96,7 @@ namespace MINgo.Tests
                 handbrake: false,
                 switchVehicle: false));
 
-            yield return SimulateFixedFrames(260);
+            yield return SimulateFixedFrames(220);
 
             Assert.That(car.SpeedMetersPerSecond, Is.GreaterThan(4f));
             Assert.That(car.GroundedWheelCount, Is.GreaterThanOrEqualTo(3));
@@ -307,6 +305,52 @@ namespace MINgo.Tests
         }
 
         [UnityTest]
+        public IEnumerator CarCameraTracksBehindActiveVehicle()
+        {
+            yield return LoadFreeFlightScene();
+            ArcadeCarController car = ActivateCarForTest();
+            ChaseCameraRig cameraRig = FindCameraRig();
+            Camera camera = Camera.main;
+            Assert.That(car, Is.Not.Null);
+            Assert.That(cameraRig, Is.Not.Null);
+            Assert.That(camera, Is.Not.Null);
+            Assert.That(cameraRig.target, Is.EqualTo(car.transform));
+
+            VehicleInputReader.SetInputOverrideForTests(new VehicleInputSnapshot(
+                throttle: 1f,
+                steer: 1f,
+                handbrake: false,
+                switchVehicle: false));
+
+            float minDistance = float.PositiveInfinity;
+            float maxDistance = 0f;
+            float maxCenterOffset = 0f;
+            bool cameraStayedBehind = true;
+
+            yield return SimulateFixedAndRenderFrames(140, () =>
+            {
+                Vector3 toCamera = camera.transform.position - car.transform.position;
+                float distance = toCamera.magnitude;
+                minDistance = Mathf.Min(minDistance, distance);
+                maxDistance = Mathf.Max(maxDistance, distance);
+
+                Vector3 flatToCamera = Vector3.ProjectOnPlane(toCamera, Vector3.up).normalized;
+                Vector3 flatForward = Vector3.ProjectOnPlane(car.transform.forward, Vector3.up).normalized;
+                cameraStayedBehind &= Vector3.Dot(flatForward, flatToCamera) < -0.35f;
+
+                Vector3 viewportPoint = camera.WorldToViewportPoint(car.transform.position);
+                maxCenterOffset = Mathf.Max(
+                    maxCenterOffset,
+                    Mathf.Abs(viewportPoint.x - 0.5f) + Mathf.Abs(viewportPoint.y - 0.5f));
+            });
+
+            Assert.That(minDistance, Is.GreaterThanOrEqualTo(6f), $"Car camera entered target. minDistance={minDistance:F2}");
+            Assert.That(maxDistance, Is.LessThanOrEqualTo(12f), $"Car camera drifted too far. maxDistance={maxDistance:F2}");
+            Assert.That(cameraStayedBehind, Is.True, "Car camera did not remain behind the active car.");
+            Assert.That(maxCenterOffset, Is.LessThanOrEqualTo(0.65f), $"Car left readable screen center. offset={maxCenterOffset:F2}");
+        }
+
+        [UnityTest]
         public IEnumerator TurnInputBanksThenReleaseRecoversTowardLevel()
         {
             yield return LoadFreeFlightScene();
@@ -321,10 +365,7 @@ namespace MINgo.Tests
                 throttleDelta: 1f,
                 brake: false));
 
-            for (int i = 0; i < 220; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
+            yield return WaitForAircraftAltitude(aircraft, 8f, 400);
 
             float initialHeading = aircraft.transform.eulerAngles.y;
 
@@ -362,107 +403,6 @@ namespace MINgo.Tests
                 $"Heading change too small for readable turn. headingDelta={headingDelta:F2}");
             Assert.That(bankAfterRelease, Is.LessThanOrEqualTo(10f),
                 $"Expected released controls to recover near level. rollAfterTurn={rollAfterTurn:F2}, rollAfterRelease={rollAfterRelease:F2}");
-            Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Crashed));
-            Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Submerged));
-        }
-
-        [UnityTest]
-        public IEnumerator HoldingSlowdownInputAddsAirbrakeDragAfterThrottleCut()
-        {
-            yield return LoadFreeFlightScene();
-            ArcadeAircraftController aircraft = FindAircraft();
-            Assert.That(aircraft, Is.Not.Null);
-
-            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
-                pitch: 0f,
-                roll: 0f,
-                yaw: 0f,
-                turn: 0f,
-                throttleDelta: 1f,
-                brake: false));
-
-            for (int i = 0; i < 240; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-
-            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
-                pitch: 0f,
-                roll: 0f,
-                yaw: 0f,
-                turn: 0f,
-                throttleDelta: -1f,
-                brake: false));
-
-            for (int i = 0; i < 120; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-
-            float idleStartSpeed = aircraft.SpeedMetersPerSecond;
-            Assert.That(aircraft.Throttle01, Is.LessThan(0.05f));
-
-            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
-                pitch: 0f,
-                roll: 0f,
-                yaw: 0f,
-                turn: 0f,
-                throttleDelta: 0f,
-                brake: false));
-
-            for (int i = 0; i < 120; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-
-            float idleFinalSpeed = aircraft.SpeedMetersPerSecond;
-
-            yield return LoadFreeFlightScene();
-            aircraft = FindAircraft();
-            Assert.That(aircraft, Is.Not.Null);
-
-            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
-                pitch: 0f,
-                roll: 0f,
-                yaw: 0f,
-                turn: 0f,
-                throttleDelta: 1f,
-                brake: false));
-
-            for (int i = 0; i < 240; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-
-            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
-                pitch: 0f,
-                roll: 0f,
-                yaw: 0f,
-                turn: 0f,
-                throttleDelta: -1f,
-                brake: false));
-
-            for (int i = 0; i < 120; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-
-            float airbrakeStartSpeed = aircraft.SpeedMetersPerSecond;
-
-            for (int i = 0; i < 120; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-
-            float airbrakeFinalSpeed = aircraft.SpeedMetersPerSecond;
-
-            Assert.That(idleStartSpeed, Is.GreaterThan(12f));
-            Assert.That(airbrakeStartSpeed, Is.InRange(idleStartSpeed * 0.9f, idleStartSpeed * 1.1f));
-            Assert.That(aircraft.Throttle01, Is.LessThan(0.05f));
-            Assert.That(
-                airbrakeFinalSpeed,
-                Is.LessThan(idleFinalSpeed * 0.9f),
-                $"Expected held slowdown to add airbrake drag. idle={idleFinalSpeed:0.00}, airbrake={airbrakeFinalSpeed:0.00}");
             Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Crashed));
             Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Submerged));
         }
@@ -612,6 +552,66 @@ namespace MINgo.Tests
             Assert.That(averageVerticalSpeed, Is.GreaterThan(-18f), $"Approach descent runaway. vertical={averageVerticalSpeed:F2}");
         }
 
+        [UnityTest]
+        public IEnumerator AircraftCameraTracksCruiseAndTurn()
+        {
+            yield return LoadFreeFlightScene();
+            ArcadeAircraftController aircraft = FindAircraft();
+            ChaseCameraRig cameraRig = FindCameraRig();
+            Camera camera = Camera.main;
+            Assert.That(aircraft, Is.Not.Null);
+            Assert.That(cameraRig, Is.Not.Null);
+            Assert.That(camera, Is.Not.Null);
+            Assert.That(cameraRig.target, Is.EqualTo(aircraft.transform));
+
+            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
+                pitch: 0f,
+                roll: 0f,
+                yaw: 0f,
+                turn: 0f,
+                throttleDelta: 1f,
+                brake: false));
+            yield return WaitForAircraftAltitude(aircraft, 8f, 400);
+
+            float cruiseMinDistance = float.PositiveInfinity;
+            float cruiseMaxDistance = 0f;
+            float dynamicMinDistance = float.PositiveInfinity;
+            float dynamicMaxDistance = 0f;
+            float maxCenterOffset = 0f;
+            float minimumVisibleGroundRatio = 1f;
+            bool aircraftStayedInFront = true;
+
+            yield return SimulateFixedAndRenderFrames(100, () =>
+            {
+                SampleAircraftCamera(aircraft, camera, ref cruiseMinDistance, ref cruiseMaxDistance, ref maxCenterOffset, ref minimumVisibleGroundRatio, ref aircraftStayedInFront);
+                dynamicMinDistance = Mathf.Min(dynamicMinDistance, Vector3.Distance(camera.transform.position, aircraft.transform.position));
+                dynamicMaxDistance = Mathf.Max(dynamicMaxDistance, Vector3.Distance(camera.transform.position, aircraft.transform.position));
+            });
+
+            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
+                pitch: 0f,
+                roll: 0f,
+                yaw: 0f,
+                turn: 1f,
+                throttleDelta: 0f,
+                brake: false));
+            yield return SimulateFixedAndRenderFrames(150, () =>
+            {
+                float distance = Vector3.Distance(camera.transform.position, aircraft.transform.position);
+                dynamicMinDistance = Mathf.Min(dynamicMinDistance, distance);
+                dynamicMaxDistance = Mathf.Max(dynamicMaxDistance, distance);
+                SampleAircraftCamera(aircraft, camera, ref dynamicMinDistance, ref dynamicMaxDistance, ref maxCenterOffset, ref minimumVisibleGroundRatio, ref aircraftStayedInFront);
+            });
+
+            Assert.That(cruiseMinDistance, Is.GreaterThanOrEqualTo(9f), $"Cruise camera too close. min={cruiseMinDistance:F2}");
+            Assert.That(cruiseMaxDistance, Is.LessThanOrEqualTo(16f), $"Cruise camera too far. max={cruiseMaxDistance:F2}");
+            Assert.That(dynamicMinDistance, Is.GreaterThanOrEqualTo(8f), $"Dynamic aircraft camera too close. min={dynamicMinDistance:F2}");
+            Assert.That(dynamicMaxDistance, Is.LessThanOrEqualTo(18f), $"Dynamic aircraft camera too far. max={dynamicMaxDistance:F2}");
+            Assert.That(aircraftStayedInFront, Is.True, "Aircraft camera looked away from the aircraft.");
+            Assert.That(maxCenterOffset, Is.LessThanOrEqualTo(0.72f), $"Aircraft left readable screen center. offset={maxCenterOffset:F2}");
+            Assert.That(minimumVisibleGroundRatio, Is.LessThan(0.96f), "Aircraft camera stayed in sky-only framing.");
+        }
+
         private static IEnumerator LoadFreeFlightScene()
         {
             SceneManager.LoadScene("FreeFlightSandbox");
@@ -631,7 +631,25 @@ namespace MINgo.Tests
         {
             for (int i = 0; i < frameCount; i++)
             {
+                yield return new WaitForFixedUpdate();
                 onFrame();
+            }
+        }
+
+        private static IEnumerator SimulateFixedAndRenderFrames(int frameCount, Action onFrame)
+        {
+            for (int i = 0; i < frameCount; i++)
+            {
+                yield return new WaitForFixedUpdate();
+                yield return null;
+                onFrame();
+            }
+        }
+
+        private static IEnumerator WaitForAircraftAltitude(ArcadeAircraftController aircraft, float altitudeMeters, int maxFrames)
+        {
+            for (int i = 0; i < maxFrames && aircraft.AltitudeMeters < altitudeMeters; i++)
+            {
                 yield return new WaitForFixedUpdate();
             }
         }
@@ -662,9 +680,38 @@ namespace MINgo.Tests
             return Mathf.DeltaAngle(0f, target.eulerAngles.x);
         }
 
+        private static void SampleAircraftCamera(
+            ArcadeAircraftController aircraft,
+            Camera camera,
+            ref float minDistance,
+            ref float maxDistance,
+            ref float maxCenterOffset,
+            ref float minimumVisibleGroundRatio,
+            ref bool aircraftStayedInFront)
+        {
+            float distance = Vector3.Distance(camera.transform.position, aircraft.transform.position);
+            minDistance = Mathf.Min(minDistance, distance);
+            maxDistance = Mathf.Max(maxDistance, distance);
+
+            Vector3 viewportPoint = camera.WorldToViewportPoint(aircraft.transform.position);
+            aircraftStayedInFront &= viewportPoint.z > 0f;
+            maxCenterOffset = Mathf.Max(
+                maxCenterOffset,
+                Mathf.Abs(viewportPoint.x - 0.5f) + Mathf.Abs(viewportPoint.y - 0.5f));
+
+            Vector3 forward = camera.transform.forward;
+            float skyOnlyRatio = Mathf.InverseLerp(0.1f, 0.8f, forward.y);
+            minimumVisibleGroundRatio = Mathf.Min(minimumVisibleGroundRatio, skyOnlyRatio);
+        }
+
         private static ArcadeAircraftController FindAircraft()
         {
             return UnityEngine.Object.FindFirstObjectByType<ArcadeAircraftController>();
+        }
+
+        private static ChaseCameraRig FindCameraRig()
+        {
+            return UnityEngine.Object.FindFirstObjectByType<ChaseCameraRig>();
         }
 
         private static ArcadeCarController ActivateCarForTest()

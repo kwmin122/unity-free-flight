@@ -40,6 +40,7 @@ namespace MINgo.Vehicles
         public float directionChangeBrakeAcceleration = 14f;
         public float steeringYawRateDegrees = 14f;
         public float handbrakeYawAcceleration = 200f;
+        public float handbrakeYawRateDegrees = 20f;
         public float handbrakeMinimumSpeed = 8f;
         public float handbrakeMaximumAssistSpeed = 12f;
         public float groundStickAcceleration = 18f;
@@ -323,6 +324,9 @@ namespace MINgo.Vehicles
             }
 
             float speedAssist = Mathf.InverseLerp(handbrakeMinimumSpeed, handbrakeMaximumAssistSpeed, speed);
+            float yawAssist = Mathf.Max(0.8f, speedAssist);
+            float yawDelta = input.Steer * handbrakeYawRateDegrees * yawAssist * Time.fixedDeltaTime;
+            body.rotation = Quaternion.AngleAxis(yawDelta, Vector3.up) * body.rotation;
             body.AddTorque(Vector3.up * (input.Steer * handbrakeYawAcceleration * Mathf.Max(0.35f, speedAssist)), ForceMode.Acceleration);
         }
 

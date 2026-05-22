@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using MINgo.Audio;
@@ -17,6 +19,8 @@ namespace MINgo.EditorTools
     {
         private const string ScenePath = "Assets/Scenes/FreeFlightSandbox.unity";
         private const string WorldMaterialAtlasPath = "Assets/MINgo/Art/Textures/world-material-atlas-v1.png";
+        private const string SeoulMaterialAtlasPath = "Assets/MINgo/Art/Textures/seoul-generated-material-atlas-v1.png";
+        private const string SeoulBoxMeshPath = "Assets/MINgo/Art/Meshes/seoul-box-roof-split.asset";
 
         private enum WorldAtlasTile
         {
@@ -31,15 +35,31 @@ namespace MINgo.EditorTools
             Trees
         }
 
+        private enum SeoulAtlasTile
+        {
+            GlassFacade,
+            ConcreteFacade,
+            ApartmentFacade,
+            RoofMechanical,
+            RoadAsphalt,
+            RiverWater,
+            ParkGrass,
+            LandmarkMetal,
+            PalaceRoof
+        }
+
         [MenuItem("MINgo/Rebuild Free Flight Sandbox Scene")]
         public static void RebuildScene()
         {
+            EnsureSeoulMaterialAtlasAsset();
+            EnsureSeoulBoxMeshAsset();
+
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             RenderSettings.skybox = MakeProceduralSkybox();
             RenderSettings.fog = true;
             RenderSettings.fogColor = new Color(0.62f, 0.72f, 0.78f);
-            RenderSettings.fogDensity = 0.0025f;
+            RenderSettings.fogDensity = 0.0014f;
             RenderSettings.ambientLight = new Color(0.6f, 0.68f, 0.74f);
 
             var lightObject = new GameObject("Sun");
@@ -54,7 +74,7 @@ namespace MINgo.EditorTools
             camera.clearFlags = CameraClearFlags.Skybox;
             camera.fieldOfView = 62f;
             camera.nearClipPlane = 0.05f;
-            camera.farClipPlane = 2600f;
+            camera.farClipPlane = 6200f;
             cameraObject.transform.position = new Vector3(0f, 18f, -38f);
             cameraObject.transform.rotation = Quaternion.Euler(18f, 0f, 0f);
             cameraObject.AddComponent<AudioListener>();
@@ -62,7 +82,7 @@ namespace MINgo.EditorTools
             GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
             ground.name = "Flight Reference Ground";
             ground.transform.position = new Vector3(0f, -0.22f, 500f);
-            ground.transform.localScale = new Vector3(2200f, 0.08f, 2200f);
+            ground.transform.localScale = new Vector3(5200f, 0.08f, 5200f);
             ground.GetComponent<Renderer>().sharedMaterial = MakeAtlasMaterial(
                 "Flight_Reference_Ground_Mat",
                 new Color(0.36f, 0.52f, 0.4f),
@@ -112,27 +132,206 @@ namespace MINgo.EditorTools
             CreateNamsanJongnoDistrict();
             CreateGangnamDistrict();
             CreateJamsilDistrict();
+            CreateExpandedSeoulFabric();
+        }
+
+        private static void EnsureSeoulMaterialAtlasAsset()
+        {
+            string absoluteAtlasPath = Path.Combine(Application.dataPath, SeoulMaterialAtlasPath.Substring("Assets/".Length));
+            string directory = Path.GetDirectoryName(absoluteAtlasPath);
+            if (!string.IsNullOrEmpty(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            const int atlasSize = 1024;
+            Texture2D atlas = new Texture2D(atlasSize, atlasSize, TextureFormat.RGBA32, false)
+            {
+                name = "seoul-generated-material-atlas-v1"
+            };
+
+            PaintSeoulAtlasTile(atlas, SeoulAtlasTile.GlassFacade, new Color(0.22f, 0.42f, 0.55f));
+            PaintSeoulAtlasTile(atlas, SeoulAtlasTile.ConcreteFacade, new Color(0.58f, 0.6f, 0.57f));
+            PaintSeoulAtlasTile(atlas, SeoulAtlasTile.ApartmentFacade, new Color(0.64f, 0.64f, 0.58f));
+            PaintSeoulAtlasTile(atlas, SeoulAtlasTile.RoofMechanical, new Color(0.15f, 0.16f, 0.16f));
+            PaintSeoulAtlasTile(atlas, SeoulAtlasTile.RoadAsphalt, new Color(0.1f, 0.105f, 0.11f));
+            PaintSeoulAtlasTile(atlas, SeoulAtlasTile.RiverWater, new Color(0.08f, 0.3f, 0.52f));
+            PaintSeoulAtlasTile(atlas, SeoulAtlasTile.ParkGrass, new Color(0.16f, 0.42f, 0.22f));
+            PaintSeoulAtlasTile(atlas, SeoulAtlasTile.LandmarkMetal, new Color(0.64f, 0.72f, 0.76f));
+            PaintSeoulAtlasTile(atlas, SeoulAtlasTile.PalaceRoof, new Color(0.42f, 0.18f, 0.12f));
+            atlas.Apply();
+
+            File.WriteAllBytes(absoluteAtlasPath, atlas.EncodeToPNG());
+            Object.DestroyImmediate(atlas);
+            AssetDatabase.ImportAsset(SeoulMaterialAtlasPath, ImportAssetOptions.ForceUpdate);
+
+            if (AssetImporter.GetAtPath(SeoulMaterialAtlasPath) is TextureImporter importer)
+            {
+                importer.textureType = TextureImporterType.Default;
+                importer.sRGBTexture = true;
+                importer.maxTextureSize = 2048;
+                importer.mipmapEnabled = true;
+                importer.SaveAndReimport();
+            }
+        }
+
+        private static void EnsureSeoulBoxMeshAsset()
+        {
+            if (AssetDatabase.LoadAssetAtPath<Mesh>(SeoulBoxMeshPath) != null)
+            {
+                return;
+            }
+
+            string absoluteMeshPath = Path.Combine(Application.dataPath, SeoulBoxMeshPath.Substring("Assets/".Length));
+            string directory = Path.GetDirectoryName(absoluteMeshPath);
+            if (!string.IsNullOrEmpty(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            Mesh mesh = CreateBoxMeshWithRoofSubmesh("Seoul_Box_Roof_Split_Mesh");
+            AssetDatabase.CreateAsset(mesh, SeoulBoxMeshPath);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.ImportAsset(SeoulBoxMeshPath, ImportAssetOptions.ForceUpdate);
+        }
+
+        private static void PaintSeoulAtlasTile(Texture2D atlas, SeoulAtlasTile tile, Color baseColor)
+        {
+            const int columns = 3;
+            int tileSize = atlas.width / columns;
+            int index = (int)tile;
+            int column = index % columns;
+            int topRow = index / columns;
+            int startX = column * tileSize;
+            int startY = (columns - 1 - topRow) * tileSize;
+
+            for (int y = 0; y < tileSize; y++)
+            {
+                for (int x = 0; x < tileSize; x++)
+                {
+                    float u = x / (float)(tileSize - 1);
+                    float v = y / (float)(tileSize - 1);
+                    float noise = Mathf.PerlinNoise((startX + x) * 0.027f, (startY + y) * 0.031f);
+                    Color color = baseColor * Mathf.Lerp(0.82f, 1.16f, noise);
+
+                    color = tile switch
+                    {
+                        SeoulAtlasTile.GlassFacade => PaintGlassFacade(color, u, v),
+                        SeoulAtlasTile.ConcreteFacade => PaintConcreteFacade(color, u, v),
+                        SeoulAtlasTile.ApartmentFacade => PaintApartmentFacade(color, u, v),
+                        SeoulAtlasTile.RoofMechanical => PaintRoofMechanical(color, u, v),
+                        SeoulAtlasTile.RoadAsphalt => PaintRoadAsphalt(color, u, v),
+                        SeoulAtlasTile.RiverWater => PaintRiverWater(color, u, v),
+                        SeoulAtlasTile.ParkGrass => PaintParkGrass(color, u, v),
+                        SeoulAtlasTile.LandmarkMetal => PaintLandmarkMetal(color, u, v),
+                        SeoulAtlasTile.PalaceRoof => PaintPalaceRoof(color, u, v),
+                        _ => color
+                    };
+
+                    color.a = 1f;
+                    atlas.SetPixel(startX + x, startY + y, color);
+                }
+            }
+        }
+
+        private static Color PaintGlassFacade(Color color, float u, float v)
+        {
+            bool mullion = Mathf.Repeat(u * 12f, 1f) < 0.08f || Mathf.Repeat(v * 18f, 1f) < 0.06f;
+            bool brightWindow = Mathf.Repeat(u * 12f + v * 2f, 1f) > 0.72f;
+            return mullion
+                ? color * 0.42f
+                : Color.Lerp(color, new Color(0.72f, 0.88f, 0.96f), brightWindow ? 0.45f : 0.16f);
+        }
+
+        private static Color PaintConcreteFacade(Color color, float u, float v)
+        {
+            bool joint = Mathf.Repeat(u * 6f, 1f) < 0.035f || Mathf.Repeat(v * 10f, 1f) < 0.035f;
+            bool window = Mathf.Repeat(u * 9f, 1f) > 0.58f && Mathf.Repeat(v * 12f, 1f) > 0.48f;
+            Color jointColor = color * 0.58f;
+            Color windowColor = new Color(0.12f, 0.2f, 0.25f);
+            return joint ? jointColor : (window ? Color.Lerp(color, windowColor, 0.72f) : color);
+        }
+
+        private static Color PaintApartmentFacade(Color color, float u, float v)
+        {
+            bool balconyRail = Mathf.Repeat(v * 14f, 1f) < 0.08f;
+            bool window = Mathf.Repeat(u * 8f, 1f) > 0.52f && Mathf.Repeat(v * 14f, 1f) > 0.32f;
+            Color balconyColor = new Color(0.82f, 0.84f, 0.78f);
+            Color windowColor = new Color(0.16f, 0.22f, 0.25f);
+            return balconyRail ? Color.Lerp(color, balconyColor, 0.55f) : (window ? Color.Lerp(color, windowColor, 0.55f) : color);
+        }
+
+        private static Color PaintRoofMechanical(Color color, float u, float v)
+        {
+            bool vent = (u > 0.15f && u < 0.33f && v > 0.2f && v < 0.36f)
+                || (u > 0.58f && u < 0.78f && v > 0.58f && v < 0.78f);
+            bool helipad = Mathf.Abs(u - 0.5f) < 0.035f || Mathf.Abs(v - 0.5f) < 0.035f;
+            return vent
+                ? new Color(0.32f, 0.34f, 0.34f)
+                : (helipad ? Color.Lerp(color, new Color(0.88f, 0.86f, 0.62f), 0.34f) : color);
+        }
+
+        private static Color PaintRoadAsphalt(Color color, float u, float v)
+        {
+            bool center = Mathf.Abs(v - 0.5f) < 0.018f && Mathf.Repeat(u * 8f, 1f) > 0.45f;
+            bool shoulder = v < 0.08f || v > 0.92f;
+            return center
+                ? new Color(0.92f, 0.84f, 0.42f)
+                : (shoulder ? color * 0.65f : color);
+        }
+
+        private static Color PaintRiverWater(Color color, float u, float v)
+        {
+            float wave = Mathf.Sin((u * 18f + v * 7f) * Mathf.PI) * 0.5f + 0.5f;
+            return Color.Lerp(color, new Color(0.62f, 0.82f, 0.92f), wave * 0.22f);
+        }
+
+        private static Color PaintParkGrass(Color color, float u, float v)
+        {
+            bool path = Mathf.Abs(v - (0.35f + Mathf.Sin(u * Mathf.PI * 2f) * 0.08f)) < 0.035f;
+            bool treeDot = Mathf.Repeat(u * 9f, 1f) < 0.12f && Mathf.Repeat(v * 7f, 1f) < 0.12f;
+            return path
+                ? new Color(0.42f, 0.36f, 0.24f)
+                : (treeDot ? new Color(0.06f, 0.24f, 0.09f) : color);
+        }
+
+        private static Color PaintLandmarkMetal(Color color, float u, float v)
+        {
+            bool rib = Mathf.Repeat(u * 10f, 1f) < 0.12f;
+            bool highlight = u > 0.42f && u < 0.5f;
+            return rib ? color * 0.58f : (highlight ? Color.Lerp(color, Color.white, 0.28f) : color);
+        }
+
+        private static Color PaintPalaceRoof(Color color, float u, float v)
+        {
+            bool ridge = Mathf.Repeat(u * 5f, 1f) < 0.07f;
+            bool dancheong = Mathf.Repeat(v * 7f, 1f) < 0.08f;
+            return ridge
+                ? new Color(0.2f, 0.08f, 0.06f)
+                : (dancheong ? Color.Lerp(color, new Color(0.06f, 0.32f, 0.22f), 0.55f) : color);
         }
 
         private static void CreateSeoulHangangAxis()
         {
-            GameObject westRiver = CreateLandingSurface("Hangang River West", SurfaceKind.Water, new Vector3(-210f, -0.07f, 1080f), new Vector3(720f, 0.7f, 130f), new Color(0.09f, 0.33f, 0.58f));
+            GameObject westRiver = CreateLandingSurface("Hangang River West", SurfaceKind.Water, new Vector3(-760f, -0.07f, 1080f), new Vector3(1480f, 0.7f, 150f), new Color(0.09f, 0.33f, 0.58f));
             westRiver.GetComponent<Collider>().isTrigger = true;
-            GameObject eastRiver = CreateLandingSurface("Hangang River East", SurfaceKind.Water, new Vector3(470f, -0.07f, 1080f), new Vector3(720f, 0.7f, 130f), new Color(0.08f, 0.31f, 0.55f));
+            GameObject eastRiver = CreateLandingSurface("Hangang River East", SurfaceKind.Water, new Vector3(760f, -0.07f, 1080f), new Vector3(1480f, 0.7f, 150f), new Color(0.08f, 0.31f, 0.55f));
             eastRiver.GetComponent<Collider>().isTrigger = true;
 
-            CreateLandingSurface("Seoul Hangang North Park", SurfaceKind.Field, new Vector3(90f, 0.02f, 1166f), new Vector3(970f, 0.14f, 42f), new Color(0.2f, 0.45f, 0.25f));
-            CreateLandingSurface("Seoul Hangang South Park", SurfaceKind.Field, new Vector3(90f, 0.02f, 994f), new Vector3(970f, 0.14f, 42f), new Color(0.18f, 0.42f, 0.23f));
-            CreateSeoulRoad("Gangbyeonbuk-ro Riverside Road", new Vector3(80f, 0.1f, 1215f), new Vector3(1010f, 0.18f, 16f), 0f);
-            CreateSeoulRoad("Olympic-daero Riverside Road", new Vector3(80f, 0.1f, 945f), new Vector3(1010f, 0.18f, 16f), 0f);
+            CreateLandingSurface("Seoul Hangang North Park", SurfaceKind.Field, new Vector3(0f, 0.02f, 1174f), new Vector3(2950f, 0.14f, 52f), new Color(0.2f, 0.45f, 0.25f));
+            CreateLandingSurface("Seoul Hangang South Park", SurfaceKind.Field, new Vector3(0f, 0.02f, 986f), new Vector3(2950f, 0.14f, 52f), new Color(0.18f, 0.42f, 0.23f));
+            CreateSeoulRoad("Gangbyeonbuk-ro Riverside Road", new Vector3(0f, 0.1f, 1226f), new Vector3(3020f, 0.18f, 16f), 0f);
+            CreateSeoulRoad("Olympic-daero Riverside Road", new Vector3(0f, 0.1f, 934f), new Vector3(3020f, 0.18f, 16f), 0f);
+            CreateSeoulRoad("Seoul West Riverside Expressway", new Vector3(-900f, 0.12f, 1254f), new Vector3(1180f, 0.18f, 18f), 0f);
+            CreateSeoulRoad("Seoul East Riverside Expressway", new Vector3(900f, 0.12f, 906f), new Vector3(1180f, 0.18f, 18f), 0f);
 
             CreateSeoulBridge("Mapo Bridge Road", new Vector3(-190f, 5.4f, 1080f), new Vector3(18f, 0.28f, 260f), 0f);
             CreateSeoulBridge("Banpo Bridge Road", new Vector3(130f, 5.8f, 1080f), new Vector3(20f, 0.28f, 280f), 0f);
             CreateSeoulBridge("Dongjak Bridge Road", new Vector3(300f, 5.6f, 1080f), new Vector3(18f, 0.28f, 255f), 0f);
             CreateSeoulBridge("Jamsil Bridge Road", new Vector3(610f, 5.8f, 1080f), new Vector3(18f, 0.28f, 265f), 0f);
 
-            CreateSeoulTreeRow("Seoul Hangang North Tree Row", new Vector3(-385f, 0.2f, 1188f), 16, new Vector3(48f, 0f, 0f));
-            CreateSeoulTreeRow("Seoul Hangang South Tree Row", new Vector3(-385f, 0.2f, 968f), 16, new Vector3(48f, 0f, 0f));
+            CreateSeoulTreeRow("Seoul Hangang North Tree Row", new Vector3(-1320f, 0.2f, 1194f), 56, new Vector3(48f, 0f, 0f));
+            CreateSeoulTreeRow("Seoul Hangang South Tree Row", new Vector3(-1320f, 0.2f, 966f), 56, new Vector3(48f, 0f, 0f));
         }
 
         private static void CreateYeouidoDistrict()
@@ -236,6 +435,94 @@ namespace MINgo.EditorTools
 
             CreateBlock("Seoul Jamsil Stadium Bowl", new Vector3(720f, 9f, 806f), new Vector3(90f, 18f, 68f), new Color(0.56f, 0.58f, 0.56f));
             CreateBlock("Seoul Jamsil Stadium Field", new Vector3(720f, 18.2f, 806f), new Vector3(62f, 1f, 42f), new Color(0.12f, 0.42f, 0.14f));
+        }
+
+        private static void CreateExpandedSeoulFabric()
+        {
+            CreateSeoulGlassTower("Seoul Map West Boundary Landmark", new Vector3(-1540f, 64f, 1110f), new Vector3(34f, 128f, 30f), new Color(0.36f, 0.48f, 0.56f));
+            CreateSeoulGlassTower("Seoul Map East Boundary Landmark", new Vector3(1560f, 72f, 930f), new Vector3(36f, 144f, 34f), new Color(0.42f, 0.56f, 0.62f));
+            CreateSeoulRoad("Seoul West Boundary Arterial", new Vector3(-1450f, 0.16f, 1038f), new Vector3(260f, 0.18f, 14f), -18f);
+            CreateSeoulRoad("Seoul East Boundary Arterial", new Vector3(1450f, 0.16f, 982f), new Vector3(270f, 0.18f, 14f), 22f);
+
+            CreateGangnamExtendedBlocks();
+            CreateYeouidoExtendedBlocks();
+            CreateJamsilExtendedBlocks();
+            CreateJongnoExtendedBlocks();
+        }
+
+        private static void CreateGangnamExtendedBlocks()
+        {
+            for (int i = 0; i < 54; i++)
+            {
+                int row = i / 9;
+                int col = i % 9;
+                float height = 24f + ((i * 19) % 82);
+                Vector3 position = new Vector3(80f + col * 58f, height * 0.5f, 590f + row * 48f);
+                Vector3 scale = new Vector3(22f + (i % 4) * 3f, height, 18f + (i % 3) * 5f);
+                if (i % 4 == 0)
+                {
+                    CreateSeoulGlassTower("Seoul Gangnam Extended Glass Block " + i, position, scale, new Color(0.26f, 0.4f, 0.52f));
+                }
+                else
+                {
+                    CreateSeoulApartmentSlab("Seoul Gangnam Extended Mixed Block " + i, position, scale, new Color(0.57f, 0.59f, 0.55f));
+                }
+            }
+        }
+
+        private static void CreateYeouidoExtendedBlocks()
+        {
+            for (int i = 0; i < 24; i++)
+            {
+                int row = i / 6;
+                int col = i % 6;
+                float height = 22f + ((i * 23) % 92);
+                Vector3 position = new Vector3(-430f + col * 46f, height * 0.5f, 1010f + row * 50f);
+                Vector3 scale = new Vector3(18f + (i % 3) * 4f, height, 16f + (i % 2) * 6f);
+                if (i % 3 == 0)
+                {
+                    CreateSeoulGlassTower("Seoul Yeouido Extended Finance Block " + i, position, scale, new Color(0.34f, 0.48f, 0.58f));
+                }
+                else
+                {
+                    CreateSeoulApartmentSlab("Seoul Yeouido Extended Riverside Block " + i, position, scale, new Color(0.61f, 0.62f, 0.57f));
+                }
+            }
+        }
+
+        private static void CreateJamsilExtendedBlocks()
+        {
+            for (int i = 0; i < 30; i++)
+            {
+                int row = i / 6;
+                int col = i % 6;
+                float height = 20f + ((i * 13) % 58);
+                Vector3 position = new Vector3(500f + col * 56f, height * 0.5f, 620f + row * 46f);
+                Vector3 scale = new Vector3(28f, height, 16f + (i % 3) * 4f);
+                CreateSeoulApartmentSlab("Seoul Jamsil Extended Apartment Block " + i, position, scale, new Color(0.62f, 0.63f, 0.58f));
+            }
+        }
+
+        private static void CreateJongnoExtendedBlocks()
+        {
+            for (int i = 0; i < 28; i++)
+            {
+                int row = i / 7;
+                int col = i % 7;
+                float height = 14f + ((i * 7) % 30);
+                Vector3 position = new Vector3(-430f + col * 44f, height * 0.5f, 1255f + row * 42f);
+                Vector3 scale = new Vector3(22f + (i % 2) * 6f, height, 18f + (i % 3) * 3f);
+                CreateSeoulApartmentSlab("Seoul Jongno Extended Lowrise Block " + i, position, scale, new Color(0.58f, 0.57f, 0.52f));
+            }
+
+            CreateSeoulBoxWithFaces(
+                "Seoul Jongno Palace Roof Pavilion",
+                new Vector3(-155f, 25f, 1510f),
+                new Vector3(54f, 14f, 28f),
+                new Color(0.44f, 0.22f, 0.15f),
+                SeoulAtlasTile.ConcreteFacade,
+                new Color(0.38f, 0.12f, 0.09f),
+                SeoulAtlasTile.PalaceRoof);
         }
 
         private static void CreateAirport()
@@ -465,7 +752,14 @@ namespace MINgo.EditorTools
 
         private static void CreateSeoulGlassTower(string name, Vector3 position, Vector3 scale, Color color)
         {
-            CreateBlock(name, position, scale, color);
+            CreateSeoulBoxWithFaces(
+                name,
+                position,
+                scale,
+                color,
+                SeoulAtlasTile.GlassFacade,
+                new Color(0.12f, 0.14f, 0.15f),
+                SeoulAtlasTile.RoofMechanical);
             float topY = position.y + scale.y * 0.5f;
             float frontZ = position.z + scale.z * 0.51f;
             float rightX = position.x + scale.x * 0.51f;
@@ -484,7 +778,14 @@ namespace MINgo.EditorTools
 
         private static void CreateSeoulApartmentSlab(string name, Vector3 position, Vector3 scale, Color color)
         {
-            CreateBlock(name, position, scale, color);
+            CreateSeoulBoxWithFaces(
+                name,
+                position,
+                scale,
+                color,
+                SeoulAtlasTile.ApartmentFacade,
+                new Color(0.28f, 0.29f, 0.28f),
+                SeoulAtlasTile.RoofMechanical);
             float frontZ = position.z + scale.z * 0.51f;
             int stripCount = Mathf.Clamp(Mathf.RoundToInt(scale.y / 14f), 2, 6);
             for (int i = 0; i < stripCount; i++)
@@ -494,6 +795,81 @@ namespace MINgo.EditorTools
             }
 
             CreateVisualBlock(name + " Rooftop Line", new Vector3(position.x, position.y + scale.y * 0.5f + 0.35f, position.z), new Vector3(scale.x * 0.94f, 0.7f, scale.z * 0.9f), new Color(0.32f, 0.33f, 0.32f));
+        }
+
+        private static GameObject CreateSeoulBoxWithFaces(
+            string name,
+            Vector3 position,
+            Vector3 scale,
+            Color sideColor,
+            SeoulAtlasTile sideTile,
+            Color roofColor,
+            SeoulAtlasTile roofTile)
+        {
+            var box = new GameObject(name);
+            box.transform.position = position;
+            box.transform.localScale = scale;
+
+            var meshFilter = box.AddComponent<MeshFilter>();
+            meshFilter.sharedMesh = AssetDatabase.LoadAssetAtPath<Mesh>(SeoulBoxMeshPath)
+                ?? CreateBoxMeshWithRoofSubmesh("Seoul_Box_Roof_Split_Mesh");
+
+            var renderer = box.AddComponent<MeshRenderer>();
+            renderer.sharedMaterials = new[]
+            {
+                MakeSeoulAtlasMaterial(name.Replace(" ", "_") + "_Facade_Mat", sideColor, sideTile),
+                MakeSeoulAtlasMaterial(name.Replace(" ", "_") + "_Roof_Mat", roofColor, roofTile)
+            };
+
+            box.AddComponent<BoxCollider>();
+            return box;
+        }
+
+        private static Mesh CreateBoxMeshWithRoofSubmesh(string name)
+        {
+            var vertices = new[]
+            {
+                new Vector3(-0.5f, -0.5f, 0.5f), new Vector3(-0.5f, 0.5f, 0.5f), new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0.5f, -0.5f, 0.5f),
+                new Vector3(0.5f, -0.5f, -0.5f), new Vector3(0.5f, 0.5f, -0.5f), new Vector3(-0.5f, 0.5f, -0.5f), new Vector3(-0.5f, -0.5f, -0.5f),
+                new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(-0.5f, 0.5f, -0.5f), new Vector3(-0.5f, 0.5f, 0.5f), new Vector3(-0.5f, -0.5f, 0.5f),
+                new Vector3(0.5f, -0.5f, 0.5f), new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0.5f, 0.5f, -0.5f), new Vector3(0.5f, -0.5f, -0.5f),
+                new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(-0.5f, -0.5f, 0.5f), new Vector3(0.5f, -0.5f, 0.5f), new Vector3(0.5f, -0.5f, -0.5f),
+                new Vector3(-0.5f, 0.5f, 0.5f), new Vector3(-0.5f, 0.5f, -0.5f), new Vector3(0.5f, 0.5f, -0.5f), new Vector3(0.5f, 0.5f, 0.5f)
+            };
+            var uvs = new[]
+            {
+                new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(1f, 0f),
+                new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(1f, 0f),
+                new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(1f, 0f),
+                new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(1f, 0f),
+                new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(1f, 0f),
+                new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(1f, 0f)
+            };
+            var sideTriangles = new List<int>(30);
+            for (int face = 0; face < 5; face++)
+            {
+                int start = face * 4;
+                sideTriangles.Add(start);
+                sideTriangles.Add(start + 1);
+                sideTriangles.Add(start + 2);
+                sideTriangles.Add(start);
+                sideTriangles.Add(start + 2);
+                sideTriangles.Add(start + 3);
+            }
+
+            var roofTriangles = new[] { 20, 21, 22, 20, 22, 23 };
+            var mesh = new Mesh
+            {
+                name = name,
+                vertices = vertices,
+                uv = uvs,
+                subMeshCount = 2
+            };
+            mesh.SetTriangles(sideTriangles, 0);
+            mesh.SetTriangles(roofTriangles, 1);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return mesh;
         }
 
         private static void CreateSeoulTreeRow(string name, Vector3 start, int count, Vector3 step)
@@ -654,6 +1030,7 @@ namespace MINgo.EditorTools
             controller.directionChangeBrakeAcceleration = 14f;
             controller.steeringYawRateDegrees = 14f;
             controller.handbrakeYawAcceleration = 200f;
+            controller.handbrakeYawRateDegrees = 20f;
             controller.handbrakeMinimumSpeed = 8f;
             controller.handbrakeMaximumAssistSpeed = 12f;
             controller.groundStickAcceleration = 18f;
@@ -938,10 +1315,12 @@ namespace MINgo.EditorTools
             surface.name = name;
             surface.transform.position = position;
             surface.transform.localScale = scale;
-            surface.GetComponent<Renderer>().sharedMaterial = MakeAtlasMaterial(
-                name.Replace(" ", "_") + "_Mat",
-                color,
-                GetSurfaceTile(kind));
+            surface.GetComponent<Renderer>().sharedMaterial = IsSeoulWorldName(name)
+                ? MakeSeoulAtlasMaterial(name.Replace(" ", "_") + "_Mat", color, GetSeoulSurfaceTile(kind))
+                : MakeAtlasMaterial(
+                    name.Replace(" ", "_") + "_Mat",
+                    color,
+                    GetSurfaceTile(kind));
             surface.AddComponent<SurfaceTag>().kind = kind;
             return surface;
         }
@@ -952,10 +1331,12 @@ namespace MINgo.EditorTools
             block.name = name;
             block.transform.position = position;
             block.transform.localScale = scale;
-            block.GetComponent<Renderer>().sharedMaterial = MakeAtlasMaterial(
-                name.Replace(" ", "_") + "_Mat",
-                color,
-                GetBlockTile(name));
+            block.GetComponent<Renderer>().sharedMaterial = IsSeoulWorldName(name)
+                ? MakeSeoulAtlasMaterial(name.Replace(" ", "_") + "_Mat", color, GetSeoulBlockTile(name))
+                : MakeAtlasMaterial(
+                    name.Replace(" ", "_") + "_Mat",
+                    color,
+                    GetBlockTile(name));
             return block;
         }
 
@@ -972,10 +1353,12 @@ namespace MINgo.EditorTools
             block.name = name;
             block.transform.position = position;
             block.transform.localScale = scale;
-            block.GetComponent<Renderer>().sharedMaterial = MakeAtlasMaterial(
-                name.Replace(" ", "_") + "_Mat",
-                color,
-                tile);
+            block.GetComponent<Renderer>().sharedMaterial = IsSeoulWorldName(name)
+                ? MakeSeoulAtlasMaterial(name.Replace(" ", "_") + "_Mat", color, GetSeoulBlockTile(name))
+                : MakeAtlasMaterial(
+                    name.Replace(" ", "_") + "_Mat",
+                    color,
+                    tile);
             return block;
         }
 
@@ -985,10 +1368,12 @@ namespace MINgo.EditorTools
             block.name = name;
             block.transform.position = position;
             block.transform.localScale = scale;
-            block.GetComponent<Renderer>().sharedMaterial = MakeAtlasMaterial(
-                name.Replace(" ", "_") + "_Mat",
-                color,
-                tile);
+            block.GetComponent<Renderer>().sharedMaterial = IsSeoulWorldName(name)
+                ? MakeSeoulAtlasMaterial(name.Replace(" ", "_") + "_Mat", color, GetSeoulBlockTile(name))
+                : MakeAtlasMaterial(
+                    name.Replace(" ", "_") + "_Mat",
+                    color,
+                    tile);
             return block;
         }
 
@@ -1003,6 +1388,17 @@ namespace MINgo.EditorTools
                 SurfaceKind.CanyonFloor => WorldAtlasTile.Canyon,
                 SurfaceKind.Water => WorldAtlasTile.Ocean,
                 _ => WorldAtlasTile.Grass
+            };
+        }
+
+        private static SeoulAtlasTile GetSeoulSurfaceTile(SurfaceKind kind)
+        {
+            return kind switch
+            {
+                SurfaceKind.Road => SeoulAtlasTile.RoadAsphalt,
+                SurfaceKind.Water => SeoulAtlasTile.RiverWater,
+                SurfaceKind.Field => SeoulAtlasTile.ParkGrass,
+                _ => SeoulAtlasTile.ConcreteFacade
             };
         }
 
@@ -1041,6 +1437,60 @@ namespace MINgo.EditorTools
             return WorldAtlasTile.Grass;
         }
 
+        private static SeoulAtlasTile GetSeoulBlockTile(string name)
+        {
+            if (name.Contains("Road") || name.Contains("Bridge") || name.Contains("Expressway") || name.Contains("Marking"))
+            {
+                return SeoulAtlasTile.RoadAsphalt;
+            }
+
+            if (name.Contains("Park") || name.Contains("Tree") || name.Contains("Canopy") || name.Contains("Field"))
+            {
+                return SeoulAtlasTile.ParkGrass;
+            }
+
+            if (name.Contains("River") || name.Contains("Lake") || name.Contains("Floating Island"))
+            {
+                return SeoulAtlasTile.RiverWater;
+            }
+
+            if (name.Contains("Tower") || name.Contains("Landmark") || name.Contains("Mast") || name.Contains("Antenna"))
+            {
+                return SeoulAtlasTile.LandmarkMetal;
+            }
+
+            if (name.Contains("Palace") || name.Contains("Gate"))
+            {
+                return SeoulAtlasTile.PalaceRoof;
+            }
+
+            if (name.Contains("Apartment") || name.Contains("Riverside") || name.Contains("Lowrise"))
+            {
+                return SeoulAtlasTile.ApartmentFacade;
+            }
+
+            return SeoulAtlasTile.ConcreteFacade;
+        }
+
+        private static bool IsSeoulWorldName(string name)
+        {
+            return name.Contains("Seoul")
+                || name.Contains("Hangang")
+                || name.Contains("Yeouido")
+                || name.Contains("Banpo")
+                || name.Contains("Nodeul")
+                || name.Contains("Namsan")
+                || name.Contains("Gangnam")
+                || name.Contains("Jamsil")
+                || name.Contains("Jongno")
+                || name.Contains("Seokchon")
+                || name.Contains("Mapo Bridge")
+                || name.Contains("Dongjak Bridge")
+                || name.Contains("Olympic-daero")
+                || name.Contains("Gangbyeonbuk-ro")
+                || name.Contains("N Seoul Tower");
+        }
+
         private static Material MakeAtlasMaterial(string name, Color color, WorldAtlasTile tile)
         {
             Material material = MakeMaterial(name, color);
@@ -1074,7 +1524,49 @@ namespace MINgo.EditorTools
             return material;
         }
 
+        private static Material MakeSeoulAtlasMaterial(string name, Color color, SeoulAtlasTile tile)
+        {
+            Material material = MakeMaterial(name, color);
+            Texture2D atlas = AssetDatabase.LoadAssetAtPath<Texture2D>(SeoulMaterialAtlasPath);
+            if (atlas == null)
+            {
+                return material;
+            }
+
+            Vector2 scale = new Vector2(1f / 3f, 1f / 3f);
+            Vector2 offset = GetSeoulAtlasOffset(tile);
+
+            if (material.HasProperty("_BaseMap"))
+            {
+                material.SetTexture("_BaseMap", atlas);
+                material.SetTextureScale("_BaseMap", scale);
+                material.SetTextureOffset("_BaseMap", offset);
+                material.SetColor("_BaseColor", color);
+            }
+
+            if (material.HasProperty("_MainTex"))
+            {
+                material.SetTexture("_MainTex", atlas);
+                material.SetTextureScale("_MainTex", scale);
+                material.SetTextureOffset("_MainTex", offset);
+            }
+
+            material.mainTexture = atlas;
+            material.mainTextureScale = scale;
+            material.mainTextureOffset = offset;
+            return material;
+        }
+
         private static Vector2 GetAtlasOffset(WorldAtlasTile tile)
+        {
+            int index = (int)tile;
+            int column = index % 3;
+            int topRow = index / 3;
+            int unityRow = 2 - topRow;
+            return new Vector2(column / 3f, unityRow / 3f);
+        }
+
+        private static Vector2 GetSeoulAtlasOffset(SeoulAtlasTile tile)
         {
             int index = (int)tile;
             int column = index % 3;

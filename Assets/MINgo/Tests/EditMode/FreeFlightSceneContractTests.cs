@@ -206,6 +206,60 @@ namespace MINgo.Tests
         }
 
         [Test]
+        public void SceneContainsSeoulHangangLandmarkSlice()
+        {
+            string[] objectNames = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
+                .Select(transform => transform.name)
+                .ToArray();
+
+            Assert.That(objectNames, Does.Contain("Hangang River West"));
+            Assert.That(objectNames, Does.Contain("Hangang River East"));
+            Assert.That(objectNames, Does.Contain("Yeouido Island Park"));
+            Assert.That(objectNames, Does.Contain("Yeouido 63 Finance Tower"));
+            Assert.That(objectNames, Does.Contain("Banpo Bridge Road"));
+            Assert.That(objectNames, Does.Contain("Nodeul Island Park"));
+            Assert.That(objectNames, Does.Contain("Namsan Ridge"));
+            Assert.That(objectNames, Does.Contain("N Seoul Tower"));
+            Assert.That(objectNames, Does.Contain("Gangnam Boulevard"));
+            Assert.That(objectNames, Does.Contain("Jamsil Lotte World Tower"));
+            Assert.That(objectNames, Does.Contain("Seokchon Lake East"));
+        }
+
+        [Test]
+        public void SceneContainsDenseSeoulDistrictClusters()
+        {
+            string[] objectNames = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
+                .Select(transform => transform.name)
+                .ToArray();
+
+            Assert.That(objectNames.Count(name => name.StartsWith("Seoul")), Is.GreaterThanOrEqualTo(70));
+            Assert.That(objectNames.Count(name => name.Contains("Gangnam")), Is.GreaterThanOrEqualTo(20));
+            Assert.That(objectNames.Count(name => name.Contains("Yeouido")), Is.GreaterThanOrEqualTo(12));
+            Assert.That(objectNames.Count(name => name.Contains("Jamsil")), Is.GreaterThanOrEqualTo(10));
+            Assert.That(objectNames.Count(name => name.Contains("Jongno")), Is.GreaterThanOrEqualTo(8));
+        }
+
+        [Test]
+        public void SeoulWaterAndBridgeContractsArePlayable()
+        {
+            AssertWaterTrigger("Hangang River West");
+            AssertWaterTrigger("Hangang River East");
+            AssertRoadSurface("Banpo Bridge Road");
+            AssertRoadSurface("Mapo Bridge Road");
+            AssertRoadSurface("Jamsil Bridge Road");
+            AssertRoadSurface("Olympic-daero Riverside Road");
+            AssertRoadSurface("Gangbyeonbuk-ro Riverside Road");
+        }
+
+        [Test]
+        public void SeoulLandmarksHaveReadableScale()
+        {
+            Assert.That(GameObject.Find("Jamsil Lotte World Tower").transform.localScale.y, Is.GreaterThanOrEqualTo(180f));
+            Assert.That(GameObject.Find("N Seoul Tower").transform.position.y, Is.GreaterThanOrEqualTo(95f));
+            Assert.That(GameObject.Find("N Seoul Tower").transform.localScale.y, Is.GreaterThanOrEqualTo(70f));
+        }
+
+        [Test]
         public void RoadAndRunwayPaintDoesNotBlockVehicles()
         {
             AssertVisualOnlyWorldMarking("Airport Parking Stall 0");
@@ -253,6 +307,24 @@ namespace MINgo.Tests
             Assert.That(mapConcept.width, Is.GreaterThanOrEqualTo(1024));
             Assert.That(carReference, Is.Not.Null);
             Assert.That(carReference.width, Is.GreaterThanOrEqualTo(1024));
+        }
+
+        private static void AssertWaterTrigger(string objectName)
+        {
+            GameObject water = GameObject.Find(objectName);
+            Assert.That(water, Is.Not.Null, objectName);
+            Assert.That(water.GetComponent<SurfaceTag>(), Is.Not.Null, objectName);
+            Assert.That(water.GetComponent<SurfaceTag>().kind, Is.EqualTo(SurfaceKind.Water), objectName);
+            Assert.That(water.GetComponent<Collider>().isTrigger, Is.True, objectName);
+        }
+
+        private static void AssertRoadSurface(string objectName)
+        {
+            GameObject road = GameObject.Find(objectName);
+            Assert.That(road, Is.Not.Null, objectName);
+            Assert.That(road.GetComponent<SurfaceTag>(), Is.Not.Null, objectName);
+            Assert.That(road.GetComponent<SurfaceTag>().kind, Is.EqualTo(SurfaceKind.Road), objectName);
+            Assert.That(road.GetComponent<Collider>().isTrigger, Is.False, objectName);
         }
 
         private static void AssertUsesAtlas(string objectName, Texture2D atlas)

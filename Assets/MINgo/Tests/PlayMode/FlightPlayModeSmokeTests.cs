@@ -47,12 +47,9 @@ namespace MINgo.Tests
         public IEnumerator CarAccelerationStaysGrounded()
         {
             yield return LoadFreeFlightScene();
-            ArcadeAircraftController aircraft = FindAircraft();
-            ArcadeCarController car = Object.FindFirstObjectByType<ArcadeCarController>();
+            ArcadeCarController car = ActivateCarForTest();
             Assert.That(car, Is.Not.Null);
 
-            aircraft.acceptsInput = false;
-            car.acceptsInput = true;
             VehicleInputReader.SetInputOverrideForTests(new VehicleInputSnapshot(
                 throttle: 1f,
                 steer: 0f,
@@ -68,6 +65,62 @@ namespace MINgo.Tests
             Assert.That(car.GroundedWheelCount, Is.GreaterThanOrEqualTo(3));
             Assert.That(car.transform.position.y, Is.LessThan(2.5f));
             Assert.That(Mathf.Abs(car.RollDegrees), Is.LessThan(18f));
+        }
+
+        [UnityTest]
+        public IEnumerator CarForwardRightInputMovesAndTurns()
+        {
+            yield return LoadFreeFlightScene();
+            ArcadeCarController car = ActivateCarForTest();
+            Assert.That(car, Is.Not.Null);
+
+            Vector3 startPosition = car.transform.position;
+            float startYaw = car.transform.eulerAngles.y;
+
+            VehicleInputReader.SetInputOverrideForTests(new VehicleInputSnapshot(
+                throttle: 1f,
+                steer: 1f,
+                handbrake: false,
+                switchVehicle: false));
+
+            for (int i = 0; i < 180; i++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            Assert.That(car.SpeedMetersPerSecond, Is.GreaterThan(6f));
+            Assert.That(Vector3.Distance(startPosition, car.transform.position), Is.GreaterThan(10f));
+            Assert.That(Mathf.Abs(Mathf.DeltaAngle(startYaw, car.transform.eulerAngles.y)), Is.GreaterThan(5f));
+            Assert.That(car.GroundedWheelCount, Is.GreaterThanOrEqualTo(3));
+        }
+
+        [UnityTest]
+        public IEnumerator CarReverseRightInputBacksUpAndTurns()
+        {
+            yield return LoadFreeFlightScene();
+            ArcadeCarController car = ActivateCarForTest();
+            Assert.That(car, Is.Not.Null);
+
+            Vector3 startPosition = car.transform.position;
+            Vector3 startForward = car.transform.forward;
+            float startYaw = car.transform.eulerAngles.y;
+
+            VehicleInputReader.SetInputOverrideForTests(new VehicleInputSnapshot(
+                throttle: -1f,
+                steer: 1f,
+                handbrake: false,
+                switchVehicle: false));
+
+            for (int i = 0; i < 220; i++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            float backwardTravel = Vector3.Dot(car.transform.position - startPosition, startForward);
+            Assert.That(backwardTravel, Is.LessThan(-3f));
+            Assert.That(car.SpeedMetersPerSecond, Is.GreaterThan(2f));
+            Assert.That(Mathf.Abs(Mathf.DeltaAngle(startYaw, car.transform.eulerAngles.y)), Is.GreaterThan(4f));
+            Assert.That(car.GroundedWheelCount, Is.GreaterThanOrEqualTo(3));
         }
 
         [UnityTest]
@@ -250,6 +303,25 @@ namespace MINgo.Tests
         private static ArcadeAircraftController FindAircraft()
         {
             return Object.FindFirstObjectByType<ArcadeAircraftController>();
+        }
+
+        private static ArcadeCarController ActivateCarForTest()
+        {
+            PlayerVehicleSwitcher switcher = Object.FindFirstObjectByType<PlayerVehicleSwitcher>();
+            Assert.That(switcher, Is.Not.Null);
+            switcher.startInAircraft = false;
+            switcher.SetActiveVehicle(useAircraft: false);
+            if (switcher.aircraft != null)
+            {
+                switcher.aircraft.acceptsInput = false;
+            }
+
+            if (switcher.car != null)
+            {
+                switcher.car.acceptsInput = true;
+            }
+
+            return switcher.car;
         }
     }
 }

@@ -63,9 +63,16 @@ Purpose: rebuild MINgo's car after playtest feedback that the first version felt
 - Handling:
   - `W` applies motor torque until max speed.
   - Releasing `W` applies light coasting/engine braking so the car does not keep accelerating or feel uncontrolled.
-  - `S` brakes while moving forward, then reverses only below the reverse threshold.
+  - `S` brakes while moving forward at speed, then reverses below a forgiving low-speed threshold so the car behaves like a keyboard/GTA-style vehicle instead of feeling stuck.
+  - Reverse steering is damped so holding `S+D` produces a controllable backward arc instead of immediately spinning the car around.
   - Steering angle reduces with speed.
   - Downforce and anti-roll force keep the car planted.
+  - Player input wakes the Rigidbody and disables sleep threshold for the player car so a stopped vehicle always responds to `W`, `S`, and combined steering input.
+  - The controller uses a grounded traction assist in addition to WheelCollider suspension. WheelColliders still handle contact, suspension, friction, and wheel pose, but keyboard play needs strong direct acceleration while the car is supported by wheels, by low ground height, or by a downward road raycast so `W` responds immediately from rest without assisting high airborne motion.
+  - `W+D` and `S+D` must keep throttle/reverse and steering as separate simultaneous inputs, matching the common Unity vehicle pattern of applying vertical input to motor/brake torque and horizontal input to wheel steer angle in the same physics step.
+  - WheelCollider motor torque is scaled to zero for the current blockout vehicle. The previous total-torque division and wheel-axis sign behavior made straight and reverse input unreliable. The WheelColliders remain responsible for contact, suspension, brake torque, friction, and visual wheel pose while grounded traction assist provides predictable keyboard drive.
+  - Road paint, parking stall lines, runway threshold marks, and road center stripes are visual-only objects with no collider. They must not act like hidden curbs that block the car from driving straight.
+  - The player car starts on the open airport ring road, facing along the road, so initial `W` input has enough runway to demonstrate movement before the player reaches any obstacle.
 - Map:
   - The generated map concept was translated into actual scene objects: airport ring road, city connector, downtown roads, marina access road, lighthouse road, canyon hairpin roads, mountain switchback guardrails, and the existing airport/downtown/coast/bridge landmarks.
 

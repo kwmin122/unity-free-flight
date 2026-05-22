@@ -6,6 +6,36 @@ namespace MINgo.Tests
     public sealed class ArcadeCarControllerTests
     {
         [Test]
+        public void CreateKeyboardSnapshot_AllowsForwardAndRightTogether()
+        {
+            VehicleInputSnapshot input = VehicleInputReader.CreateKeyboardSnapshot(
+                accelerate: true,
+                brakeOrReverse: false,
+                steerLeft: false,
+                steerRight: true,
+                handbrake: false,
+                switchVehicle: false);
+
+            Assert.That(input.Throttle, Is.EqualTo(1f));
+            Assert.That(input.Steer, Is.EqualTo(1f));
+        }
+
+        [Test]
+        public void CreateKeyboardSnapshot_AllowsReverseAndRightTogether()
+        {
+            VehicleInputSnapshot input = VehicleInputReader.CreateKeyboardSnapshot(
+                accelerate: false,
+                brakeOrReverse: true,
+                steerLeft: false,
+                steerRight: true,
+                handbrake: false,
+                switchVehicle: false);
+
+            Assert.That(input.Throttle, Is.EqualTo(-1f));
+            Assert.That(input.Steer, Is.EqualTo(1f));
+        }
+
+        [Test]
         public void ResolveDriveMode_BrakesBeforeReverseWhenMovingForwardAndSHeld()
         {
             DriveMode mode = ArcadeCarController.ResolveDriveMode(

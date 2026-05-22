@@ -21,19 +21,23 @@ namespace MINgo.Vehicles
         public Transform frontRightVisual;
         public Transform rearLeftVisual;
         public Transform rearRightVisual;
-        public float motorTorque = 950f;
-        public float reverseTorque = 420f;
+        public float motorTorque = 1450f;
+        public float reverseTorque = 950f;
+        public float wheelMotorTorqueScale;
         public float brakeTorque = 2600f;
         public float coastBrakeTorque = 260f;
         public float handbrakeTorque = 4200f;
+        public float driveAssistAcceleration = 34f;
+        public float reverseAssistAcceleration = 34f;
         public float maxForwardSpeed = 34f;
         public float maxReverseSpeed = 9f;
         public float maxSteerDegrees = 28f;
         public float fullSteerSpeed = 5f;
         public float reducedSteerSpeed = 24f;
-        public float reverseThreshold = 1.2f;
+        public float reverseThreshold = 4.5f;
         public float downforce = 28f;
         public float antiRollForce = 6500f;
+        public float lowGroundSupportHeight = 1.5f;
         public Vector3 centerOfMass = new Vector3(0f, -0.45f, 0.15f);
         public bool acceptsInput;
 
@@ -53,6 +57,7 @@ namespace MINgo.Vehicles
             body.centerOfMass = centerOfMass;
             body.linearDamping = 0.04f;
             body.angularDamping = 1.2f;
+            body.sleepThreshold = 0f;
             body.interpolation = RigidbodyInterpolation.Interpolate;
             body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
 
@@ -70,12 +75,15 @@ namespace MINgo.Vehicles
             VehicleInputSnapshot input = acceptsInput
                 ? VehicleInputReader.ReadKeyboard()
                 : new VehicleInputSnapshot(0f, 0f, false, false);
+            WakeBodyForPlayerInput(input);
 
             Vector3 localVelocity = transform.InverseTransformDirection(body.linearVelocity);
             float forwardSpeed = localVelocity.z;
             CurrentDriveMode = ResolveDriveMode(input.Throttle, forwardSpeed, reverseThreshold);
+            UpdateGroundedWheelCount();
 
             ApplyWheelControls(input, forwardSpeed);
+            ApplyDriveAssist(CurrentDriveMode, forwardSpeed);
             ApplyDownforce();
             ApplyAntiRoll(frontLeftWheel, frontRightWheel);
             ApplyAntiRoll(rearLeftWheel, rearRightWheel);
@@ -159,8 +167,11 @@ namespace MINgo.Vehicles
 
         private void ApplyWheelControls(VehicleInputSnapshot input, float forwardSpeed)
         {
+            float steerInput = CurrentDriveMode == DriveMode.Reverse
+                ? input.Steer * 0.45f
+                : input.Steer;
             float steerDegrees = CalculateSteeringDegrees(
-                input.Steer,
+                steerInput,
                 body.linearVelocity.magnitude,
                 maxSteerDegrees,
                 fullSteerSpeed,
@@ -172,7 +183,7 @@ namespace MINgo.Vehicles
                 maxForwardSpeed,
                 maxReverseSpeed,
                 motorTorque,
-                reverseTorque);
+                reverseTorque) * wheelMotorTorqueScale;
             float brakingTorque = CalculateBrakeTorque(
                 CurrentDriveMode,
                 input.Handbrake,
@@ -185,13 +196,63 @@ namespace MINgo.Vehicles
 
             foreach (WheelCollider wheel in driveWheels)
             {
-                wheel.motorTorque = driveTorque / driveWheels.Length;
+                wheel.motorTorque = driveTorque;
             }
 
             foreach (WheelCollider wheel in allWheels)
             {
                 wheel.brakeTorque = brakingTorque;
             }
+        }
+
+        private void WakeBodyForPlayerInput(VehicleInputSnapshot input)
+        {
+            if (Mathf.Abs(input.Throttle) > 0.05f || Mathf.Abs(input.Steer) > 0.05f || input.Handbrake)
+            {
+                body.WakeUp();
+            }
+        }
+
+        private void ApplyDriveAssist(DriveMode mode, float forwardSpeed)
+        {
+            if (!HasGroundSupport())
+            {
+                return;
+            }
+
+            if (mode == DriveMode.Forward && forwardSpeed < maxForwardSpeed)
+            {
+                body.AddForce(transform.forward * driveAssistAcceleration, ForceMode.Acceleration);
+            }
+            else if (mode == DriveMode.Reverse && forwardSpeed > -maxReverseSpeed)
+            {
+                body.AddForce(-transform.forward * reverseAssistAcceleration, ForceMode.Acceleration);
+            }
+        }
+
+        private bool HasGroundSupport()
+        {
+            if (GroundedWheelCount >= 2)
+            {
+                return true;
+            }
+
+            if (transform.position.y < lowGroundSupportHeight)
+            {
+                return true;
+            }
+
+            Ray ray = new Ray(transform.position + Vector3.up * 1.2f, Vector3.down);
+            RaycastHit[] hits = Physics.RaycastAll(ray, 2.5f, ~0, QueryTriggerInteraction.Ignore);
+            foreach (RaycastHit hit in hits)
+            {
+                if (!hit.collider.transform.IsChildOf(transform))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void ApplyDownforce()

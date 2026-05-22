@@ -206,6 +206,17 @@ namespace MINgo.Tests
         }
 
         [Test]
+        public void RoadAndRunwayPaintDoesNotBlockVehicles()
+        {
+            AssertVisualOnlyWorldMarking("Airport Parking Stall 0");
+            AssertVisualOnlyWorldMarking("Airport Parking Stall 1");
+            AssertVisualOnlyWorldMarking("Airport Parking Stall 2");
+            AssertVisualOnlyWorldMarking("Runway Centerline");
+            AssertVisualOnlyWorldMarking("Runway Threshold Marking North");
+            AssertVisualOnlyWorldMarking("Airport Ring Road South Center Stripe");
+        }
+
+        [Test]
         public void SceneContainsProceduralFlightAudioRig()
         {
             ProceduralFlightAudio audio = Object.FindAnyObjectByType<ProceduralFlightAudio>();
@@ -280,6 +291,14 @@ namespace MINgo.Tests
             Transform part = car.Find(childName);
             Assert.That(part, Is.Not.Null, childName);
             Assert.That(part.GetComponent<Collider>(), Is.Null, childName);
+        }
+
+        private static void AssertVisualOnlyWorldMarking(string objectName)
+        {
+            GameObject marking = GameObject.Find(objectName);
+            Assert.That(marking, Is.Not.Null, objectName);
+            Assert.That(marking.GetComponent<Renderer>(), Is.Not.Null, objectName);
+            Assert.That(marking.GetComponent<Collider>(), Is.Null, objectName);
         }
     }
 }

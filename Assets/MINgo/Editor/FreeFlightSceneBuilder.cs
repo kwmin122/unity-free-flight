@@ -106,9 +106,9 @@ namespace MINgo.EditorTools
         private static void CreateAirport()
         {
             CreateLandingSurface("Runway", SurfaceKind.Runway, Vector3.zero, new Vector3(18f, 0.25f, 220f), new Color(0.19f, 0.2f, 0.2f));
-            CreateBlock("Runway Centerline", new Vector3(0f, 0.16f, 10f), new Vector3(1.2f, 0.03f, 170f), new Color(0.92f, 0.9f, 0.78f));
-            CreateBlock("Runway Threshold Marking North", new Vector3(0f, 0.19f, 92f), new Vector3(14f, 0.03f, 2f), new Color(0.95f, 0.93f, 0.84f));
-            CreateBlock("Runway Threshold Marking South", new Vector3(0f, 0.19f, -92f), new Vector3(14f, 0.03f, 2f), new Color(0.95f, 0.93f, 0.84f));
+            CreateVisualBlock("Runway Centerline", new Vector3(0f, 0.16f, 10f), new Vector3(1.2f, 0.03f, 170f), new Color(0.92f, 0.9f, 0.78f));
+            CreateVisualBlock("Runway Threshold Marking North", new Vector3(0f, 0.19f, 92f), new Vector3(14f, 0.03f, 2f), new Color(0.95f, 0.93f, 0.84f));
+            CreateVisualBlock("Runway Threshold Marking South", new Vector3(0f, 0.19f, -92f), new Vector3(14f, 0.03f, 2f), new Color(0.95f, 0.93f, 0.84f));
             CreateBlock("Airport Apron", new Vector3(-34f, 0f, -40f), new Vector3(58f, 0.16f, 58f), new Color(0.25f, 0.26f, 0.25f));
             CreateBlock("Hangar West", new Vector3(-72f, 6f, -70f), new Vector3(34f, 12f, 24f), new Color(0.48f, 0.52f, 0.54f));
             CreateBlock("Hangar East", new Vector3(-70f, 5f, -20f), new Vector3(28f, 10f, 20f), new Color(0.42f, 0.47f, 0.5f));
@@ -116,9 +116,9 @@ namespace MINgo.EditorTools
             CreateBlock("Airport Glass Terminal", new Vector3(-42f, 6f, 28f), new Vector3(48f, 12f, 16f), new Color(0.42f, 0.55f, 0.62f));
             CreateBlock("Airport Terminal Window Strip", new Vector3(-42f, 9f, 36.3f), new Vector3(44f, 3f, 0.5f), new Color(0.14f, 0.28f, 0.42f));
             CreateLandingSurface("Airport Parking Lot", SurfaceKind.Road, new Vector3(-118f, 0.05f, 28f), new Vector3(62f, 0.16f, 48f), new Color(0.11f, 0.12f, 0.12f));
-            CreateBlock("Airport Parking Stall 0", new Vector3(-134f, 0.18f, 18f), new Vector3(2f, 0.03f, 18f), new Color(0.95f, 0.92f, 0.68f));
-            CreateBlock("Airport Parking Stall 1", new Vector3(-122f, 0.18f, 18f), new Vector3(2f, 0.03f, 18f), new Color(0.95f, 0.92f, 0.68f));
-            CreateBlock("Airport Parking Stall 2", new Vector3(-110f, 0.18f, 18f), new Vector3(2f, 0.03f, 18f), new Color(0.95f, 0.92f, 0.68f));
+            CreateVisualBlock("Airport Parking Stall 0", new Vector3(-134f, 0.18f, 18f), new Vector3(2f, 0.03f, 18f), new Color(0.95f, 0.92f, 0.68f));
+            CreateVisualBlock("Airport Parking Stall 1", new Vector3(-122f, 0.18f, 18f), new Vector3(2f, 0.03f, 18f), new Color(0.95f, 0.92f, 0.68f));
+            CreateVisualBlock("Airport Parking Stall 2", new Vector3(-110f, 0.18f, 18f), new Vector3(2f, 0.03f, 18f), new Color(0.95f, 0.92f, 0.68f));
         }
 
         private static void CreateCoastline()
@@ -299,7 +299,7 @@ namespace MINgo.EditorTools
             GameObject road = CreateLandingSurface(name, SurfaceKind.Road, position, scale, new Color(0.1f, 0.105f, 0.11f));
             road.transform.rotation = Quaternion.Euler(0f, yawDegrees, 0f);
 
-            GameObject stripe = CreateBlock(name + " Center Stripe", position + Vector3.up * 0.12f, new Vector3(Mathf.Max(1f, scale.x * 0.05f), 0.03f, Mathf.Max(1f, scale.z * 0.72f)), new Color(0.92f, 0.86f, 0.52f));
+            GameObject stripe = CreateVisualBlock(name + " Center Stripe", position + Vector3.up * 0.12f, new Vector3(Mathf.Max(1f, scale.x * 0.05f), 0.03f, Mathf.Max(1f, scale.z * 0.72f)), new Color(0.92f, 0.86f, 0.52f));
             stripe.transform.rotation = road.transform.rotation;
             return road;
         }
@@ -384,7 +384,7 @@ namespace MINgo.EditorTools
         private static GameObject CreatePlayerCar()
         {
             var car = new GameObject("Player Car");
-            car.transform.position = new Vector3(-128f, 0.18f, 28f);
+            car.transform.position = new Vector3(-145f, 0.18f, -118f);
             car.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
 
             var body = car.AddComponent<Rigidbody>();
@@ -422,6 +422,13 @@ namespace MINgo.EditorTools
 
             var controller = car.AddComponent<ArcadeCarController>();
             controller.acceptsInput = false;
+            controller.motorTorque = 1450f;
+            controller.reverseTorque = 950f;
+            controller.wheelMotorTorqueScale = 0f;
+            controller.driveAssistAcceleration = 34f;
+            controller.reverseAssistAcceleration = 34f;
+            controller.reverseThreshold = 4.5f;
+            controller.lowGroundSupportHeight = 1.5f;
             controller.frontLeftWheel = frontLeftWheel;
             controller.frontRightWheel = frontRightWheel;
             controller.rearLeftWheel = rearLeftWheel;
@@ -720,6 +727,13 @@ namespace MINgo.EditorTools
                 name.Replace(" ", "_") + "_Mat",
                 color,
                 GetBlockTile(name));
+            return block;
+        }
+
+        private static GameObject CreateVisualBlock(string name, Vector3 position, Vector3 scale, Color color)
+        {
+            GameObject block = CreateBlock(name, position, scale, color);
+            Object.DestroyImmediate(block.GetComponent<Collider>());
             return block;
         }
 

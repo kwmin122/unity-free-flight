@@ -45,6 +45,47 @@ namespace MINgo.Tests
         }
 
         [UnityTest]
+        public IEnumerator AircraftTakeoffMeetsArcadeThresholds()
+        {
+            yield return LoadFreeFlightScene();
+            ArcadeAircraftController aircraft = FindAircraft();
+            Assert.That(aircraft, Is.Not.Null);
+
+            Vector3 startPosition = aircraft.transform.position;
+            Vector3 startForward = aircraft.transform.forward;
+            bool capturedTakeoff = false;
+            float takeoffSpeed = 0f;
+            float takeoffTravel = 0f;
+
+            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
+                pitch: 0f,
+                roll: 0f,
+                yaw: 0f,
+                turn: 0f,
+                throttleDelta: 1f,
+                brake: false));
+
+            for (int i = 0; i < 400; i++)
+            {
+                yield return new WaitForFixedUpdate();
+                if (!capturedTakeoff && aircraft.AltitudeMeters >= 8f)
+                {
+                    capturedTakeoff = true;
+                    takeoffSpeed = aircraft.SpeedMetersPerSecond;
+                    takeoffTravel = SignedForwardTravel(startPosition, aircraft.transform.position, startForward);
+                }
+            }
+
+            Assert.That(capturedTakeoff, Is.True);
+            Assert.That(takeoffSpeed, Is.InRange(18f, 25f),
+                $"Takeoff speed outside arcade band. speed={takeoffSpeed:F2}");
+            Assert.That(takeoffTravel, Is.LessThanOrEqualTo(180f),
+                $"Takeoff runway travel too long. travel={takeoffTravel:F2}");
+            Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Crashed));
+            Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Submerged));
+        }
+
+        [UnityTest]
         public IEnumerator CarAccelerationStaysGrounded()
         {
             yield return LoadFreeFlightScene();
@@ -57,10 +98,7 @@ namespace MINgo.Tests
                 handbrake: false,
                 switchVehicle: false));
 
-            for (int i = 0; i < 220; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
+            yield return SimulateFixedFrames(260);
 
             Assert.That(car.SpeedMetersPerSecond, Is.GreaterThan(4f));
             Assert.That(car.GroundedWheelCount, Is.GreaterThanOrEqualTo(3));
@@ -298,10 +336,7 @@ namespace MINgo.Tests
                 throttleDelta: 0f,
                 brake: false));
 
-            for (int i = 0; i < 120; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
+            yield return SimulateFixedFrames(150);
 
             float rollAfterTurn = aircraft.RollDegrees;
             float bankAfterTurn = Mathf.Abs(rollAfterTurn);
@@ -315,24 +350,18 @@ namespace MINgo.Tests
                 throttleDelta: 0f,
                 brake: false));
 
-            for (int i = 0; i < 160; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
+            yield return SimulateFixedFrames(200);
 
             float rollAfterRelease = aircraft.RollDegrees;
             float bankAfterRelease = Mathf.Abs(rollAfterRelease);
 
-            Assert.That(bankAfterTurn, Is.GreaterThan(8f));
-            Assert.That(Mathf.Abs(Mathf.DeltaAngle(initialHeading, headingAfterTurn)), Is.GreaterThan(5f));
-            Assert.That(
-                bankAfterRelease,
-                Is.LessThan(bankAfterTurn),
-                $"Expected release to reduce bank. rollAfterTurn={rollAfterTurn:0.00}, rollAfterRelease={rollAfterRelease:0.00}");
-            Assert.That(
-                bankAfterRelease,
-                Is.LessThan(25f),
-                $"Expected released controls to recover near level. rollAfterTurn={rollAfterTurn:0.00}, rollAfterRelease={rollAfterRelease:0.00}");
+            float headingDelta = Mathf.Abs(Mathf.DeltaAngle(initialHeading, headingAfterTurn));
+            Assert.That(bankAfterTurn, Is.InRange(15f, 45f),
+                $"Bank outside arcade turn band. rollAfterTurn={rollAfterTurn:F2}");
+            Assert.That(headingDelta, Is.GreaterThanOrEqualTo(20f),
+                $"Heading change too small for readable turn. headingDelta={headingDelta:F2}");
+            Assert.That(bankAfterRelease, Is.LessThanOrEqualTo(10f),
+                $"Expected released controls to recover near level. rollAfterTurn={rollAfterTurn:F2}, rollAfterRelease={rollAfterRelease:F2}");
             Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Crashed));
             Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Submerged));
         }
@@ -438,6 +467,151 @@ namespace MINgo.Tests
             Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Submerged));
         }
 
+        [UnityTest]
+        public IEnumerator AircraftSlowdownDropsSpeedByFifteenPercent()
+        {
+            yield return LoadFreeFlightScene();
+            ArcadeAircraftController aircraft = FindAircraft();
+            Assert.That(aircraft, Is.Not.Null);
+
+            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
+                pitch: 0f,
+                roll: 0f,
+                yaw: 0f,
+                turn: 0f,
+                throttleDelta: 1f,
+                brake: false));
+            yield return SimulateFixedFrames(320);
+
+            float speedBeforeSlowdown = aircraft.SpeedMetersPerSecond;
+            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
+                pitch: 0f,
+                roll: 0f,
+                yaw: 0f,
+                turn: 0f,
+                throttleDelta: -1f,
+                brake: false));
+            yield return SimulateFixedFrames(150);
+
+            Assert.That(aircraft.SpeedMetersPerSecond, Is.LessThanOrEqualTo(speedBeforeSlowdown * 0.85f),
+                $"Slowdown too weak. before={speedBeforeSlowdown:F2}, after={aircraft.SpeedMetersPerSecond:F2}");
+            Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Crashed));
+            Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Submerged));
+        }
+
+        [UnityTest]
+        public IEnumerator AircraftSlowdownCreatesMeasurablyMoreDescentThanIdle()
+        {
+            yield return LoadFreeFlightScene();
+            ArcadeAircraftController idleAircraft = FindAircraft();
+            Assert.That(idleAircraft, Is.Not.Null);
+
+            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
+                pitch: 0f,
+                roll: 0f,
+                yaw: 0f,
+                turn: 0f,
+                throttleDelta: 1f,
+                brake: false));
+            yield return SimulateFixedFrames(320);
+            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
+                pitch: 0f,
+                roll: 0f,
+                yaw: 0f,
+                turn: 0f,
+                throttleDelta: 0f,
+                brake: false));
+            yield return SimulateFixedFrames(60);
+            float idleStartAltitude = idleAircraft.AltitudeMeters;
+            yield return SimulateFixedFrames(150);
+            float idleVerticalSpeed = (idleAircraft.AltitudeMeters - idleStartAltitude) / 3f;
+
+            yield return LoadFreeFlightScene();
+            ArcadeAircraftController brakingAircraft = FindAircraft();
+            Assert.That(brakingAircraft, Is.Not.Null);
+
+            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
+                pitch: 0f,
+                roll: 0f,
+                yaw: 0f,
+                turn: 0f,
+                throttleDelta: 1f,
+                brake: false));
+            yield return SimulateFixedFrames(320);
+            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
+                pitch: 0f,
+                roll: 0f,
+                yaw: 0f,
+                turn: 0f,
+                throttleDelta: -1f,
+                brake: false));
+            yield return SimulateFixedFrames(60);
+            float brakeStartAltitude = brakingAircraft.AltitudeMeters;
+            yield return SimulateFixedFrames(150);
+            float brakeVerticalSpeed = (brakingAircraft.AltitudeMeters - brakeStartAltitude) / 3f;
+
+            Assert.That(brakeVerticalSpeed, Is.LessThanOrEqualTo(idleVerticalSpeed - 1.5f),
+                $"Slowdown descent too weak. idleVertical={idleVerticalSpeed:F2}, brakeVertical={brakeVerticalSpeed:F2}");
+            Assert.That(brakingAircraft.CurrentState, Is.Not.EqualTo(AircraftState.Crashed));
+            Assert.That(brakingAircraft.CurrentState, Is.Not.EqualTo(AircraftState.Submerged));
+        }
+
+        [UnityTest]
+        public IEnumerator AircraftRunwayApproachRemainsStableForEightSeconds()
+        {
+            yield return LoadFreeFlightScene();
+            ArcadeAircraftController aircraft = FindAircraft();
+            Assert.That(aircraft, Is.Not.Null);
+
+            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
+                pitch: 0f,
+                roll: 0f,
+                yaw: 0f,
+                turn: 0f,
+                throttleDelta: 1f,
+                brake: false));
+            yield return SimulateFixedFrames(300);
+
+            FlightInputReader.SetInputOverrideForTests(new FlightInputSnapshot(
+                pitch: 0f,
+                roll: 0f,
+                yaw: 0f,
+                turn: 0f,
+                throttleDelta: -1f,
+                brake: false));
+
+            float maxRoll = 0f;
+            float maxPitch = 0f;
+            int rollSignFlips = 0;
+            int lastRollSign = 0;
+            float startAltitude = aircraft.AltitudeMeters;
+            yield return SimulateFixedFrames(400, () =>
+            {
+                float roll = aircraft.RollDegrees;
+                maxRoll = Mathf.Max(maxRoll, Mathf.Abs(roll));
+                maxPitch = Mathf.Max(maxPitch, Mathf.Abs(SignedPitchDegrees(aircraft.transform)));
+
+                int rollSign = Mathf.Abs(roll) < 3f ? 0 : Math.Sign(roll);
+                if (rollSign != 0 && lastRollSign != 0 && rollSign != lastRollSign)
+                {
+                    rollSignFlips++;
+                }
+
+                if (rollSign != 0)
+                {
+                    lastRollSign = rollSign;
+                }
+            });
+
+            float averageVerticalSpeed = (aircraft.AltitudeMeters - startAltitude) / 8f;
+            Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Crashed));
+            Assert.That(aircraft.CurrentState, Is.Not.EqualTo(AircraftState.Submerged));
+            Assert.That(maxRoll, Is.LessThanOrEqualTo(20f), $"Approach roll unstable. maxRoll={maxRoll:F2}");
+            Assert.That(rollSignFlips, Is.LessThanOrEqualTo(3), $"Approach roll oscillated. flips={rollSignFlips}");
+            Assert.That(maxPitch, Is.LessThanOrEqualTo(25f), $"Approach pitch unstable. maxPitch={maxPitch:F2}");
+            Assert.That(averageVerticalSpeed, Is.GreaterThan(-18f), $"Approach descent runaway. vertical={averageVerticalSpeed:F2}");
+        }
+
         private static IEnumerator LoadFreeFlightScene()
         {
             SceneManager.LoadScene("FreeFlightSandbox");
@@ -481,6 +655,11 @@ namespace MINgo.Tests
         private static float GroundedRatio(int groundedSamples, int totalSamples)
         {
             return totalSamples == 0 ? 0f : groundedSamples / (float)totalSamples;
+        }
+
+        private static float SignedPitchDegrees(Transform target)
+        {
+            return Mathf.DeltaAngle(0f, target.eulerAngles.x);
         }
 
         private static ArcadeAircraftController FindAircraft()

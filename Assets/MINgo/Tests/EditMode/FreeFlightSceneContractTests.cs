@@ -4,6 +4,7 @@ using MINgo.Flight;
 using MINgo.Hazards;
 using MINgo.Landing;
 using MINgo.UI;
+using MINgo.Vehicles;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -156,6 +157,37 @@ namespace MINgo.Tests
             Assert.That(objectNames, Does.Contain("Coastal Palm 0 Trunk"));
             Assert.That(objectNames, Does.Contain("City Plaza Sculpture"));
             Assert.That(objectNames, Does.Contain("Runway Threshold Marking North"));
+        }
+
+        [Test]
+        public void SceneContainsDriveableCarAndVehicleSwitcher()
+        {
+            GameObject car = GameObject.Find("Player Car");
+            PlayerVehicleSwitcher switcher = Object.FindAnyObjectByType<PlayerVehicleSwitcher>();
+
+            Assert.That(car, Is.Not.Null);
+            Assert.That(car.GetComponent<Rigidbody>(), Is.Not.Null);
+            Assert.That(car.GetComponent<ArcadeCarController>(), Is.Not.Null);
+            Assert.That(switcher, Is.Not.Null);
+            Assert.That(switcher.aircraft, Is.Not.Null);
+            Assert.That(switcher.car, Is.Not.Null);
+            Assert.That(switcher.cameraRig, Is.Not.Null);
+            Assert.That(switcher.cameraRig.target.name, Is.EqualTo("Player Aircraft"));
+        }
+
+        [Test]
+        public void SceneContainsVehicleSandboxRoadLoop()
+        {
+            string[] objectNames = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
+                .Select(transform => transform.name)
+                .ToArray();
+
+            Assert.That(objectNames, Does.Contain("Airport Parking Lot"));
+            Assert.That(objectNames, Does.Contain("Airport Parking Stall 0"));
+            Assert.That(objectNames, Does.Contain("Downtown Boulevard"));
+            Assert.That(objectNames, Does.Contain("Mountain Switchback Road 0"));
+            Assert.That(objectNames, Does.Contain("Coastal Highway Bridge"));
+            Assert.That(objectNames, Does.Contain("Beach Ramp"));
         }
 
         [Test]

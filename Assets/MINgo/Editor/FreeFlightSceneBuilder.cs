@@ -5,6 +5,7 @@ using MINgo.Flight;
 using MINgo.Hazards;
 using MINgo.Landing;
 using MINgo.UI;
+using MINgo.Vehicles;
 using MINgo.World;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -77,6 +78,7 @@ namespace MINgo.EditorTools
             CreateLandmarkBeacons();
 
             GameObject aircraft = CreateAircraft();
+            GameObject car = CreatePlayerCar();
             var cameraRig = cameraObject.AddComponent<ChaseCameraRig>();
             cameraRig.target = aircraft.transform;
             cameraRig.followDistance = 8f;
@@ -95,6 +97,7 @@ namespace MINgo.EditorTools
             FlightHud hud = CreateHud(aircraft);
             CreateRestrictedAirspace(aircraft, hud);
             CreateFlightAudio(aircraft);
+            CreateVehicleSwitcher(aircraft, car, cameraRig);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddSceneToBuildSettings(ScenePath);
@@ -112,6 +115,10 @@ namespace MINgo.EditorTools
             CreateBlock("Control Tower", new Vector3(36f, 20f, -30f), new Vector3(8f, 40f, 8f), new Color(0.7f, 0.75f, 0.72f));
             CreateBlock("Airport Glass Terminal", new Vector3(-42f, 6f, 28f), new Vector3(48f, 12f, 16f), new Color(0.42f, 0.55f, 0.62f));
             CreateBlock("Airport Terminal Window Strip", new Vector3(-42f, 9f, 36.3f), new Vector3(44f, 3f, 0.5f), new Color(0.14f, 0.28f, 0.42f));
+            CreateLandingSurface("Airport Parking Lot", SurfaceKind.Road, new Vector3(-118f, 0.05f, 28f), new Vector3(62f, 0.16f, 48f), new Color(0.11f, 0.12f, 0.12f));
+            CreateBlock("Airport Parking Stall 0", new Vector3(-134f, 0.18f, 18f), new Vector3(2f, 0.03f, 18f), new Color(0.95f, 0.92f, 0.68f));
+            CreateBlock("Airport Parking Stall 1", new Vector3(-122f, 0.18f, 18f), new Vector3(2f, 0.03f, 18f), new Color(0.95f, 0.92f, 0.68f));
+            CreateBlock("Airport Parking Stall 2", new Vector3(-110f, 0.18f, 18f), new Vector3(2f, 0.03f, 18f), new Color(0.95f, 0.92f, 0.68f));
         }
 
         private static void CreateCoastline()
@@ -144,6 +151,19 @@ namespace MINgo.EditorTools
             CreateBlock("Freeway Overpass Support 2", new Vector3(126f, 4f, 590f), new Vector3(5f, 8f, 5f), new Color(0.42f, 0.43f, 0.4f));
             CreateBlock("Coastal Road Lane Stripe 0", new Vector3(210f, 0.16f, 220f), new Vector3(1f, 0.03f, 70f), new Color(0.9f, 0.86f, 0.55f));
             CreateBlock("Coastal Road Lane Stripe 1", new Vector3(210f, 0.16f, 390f), new Vector3(1f, 0.03f, 70f), new Color(0.9f, 0.86f, 0.55f));
+            CreateLandingSurface("Downtown Boulevard", SurfaceKind.Road, new Vector3(95f, 0.06f, 430f), new Vector3(126f, 0.18f, 16f), new Color(0.1f, 0.105f, 0.11f));
+            CreateLandingSurface("Coastal Highway Bridge", SurfaceKind.Road, new Vector3(298f, 3.2f, 435f), new Vector3(92f, 0.24f, 14f), new Color(0.15f, 0.16f, 0.17f));
+            CreateLandingSurface("Beach Ramp", SurfaceKind.Road, new Vector3(270f, 1.4f, 372f), new Vector3(58f, 0.2f, 12f), new Color(0.18f, 0.17f, 0.15f)).transform.rotation = Quaternion.Euler(0f, 22f, 8f);
+            for (int i = 0; i < 4; i++)
+            {
+                GameObject switchback = CreateLandingSurface(
+                    "Mountain Switchback Road " + i,
+                    SurfaceKind.Road,
+                    new Vector3(-285f + i * 48f, 9f + i * 5f, 440f + i * 42f),
+                    new Vector3(80f, 0.18f, 12f),
+                    new Color(0.12f, 0.115f, 0.105f));
+                switchback.transform.rotation = Quaternion.Euler(0f, i % 2 == 0 ? 34f : -28f, 6f + i * 2f);
+            }
         }
 
         private static void CreateFields()
@@ -323,6 +343,61 @@ namespace MINgo.EditorTools
             controller.throttleChangeRate = 3.2f;
             aircraft.AddComponent<LandingStateMachine>();
             return aircraft;
+        }
+
+        private static GameObject CreatePlayerCar()
+        {
+            var car = new GameObject("Player Car");
+            car.transform.position = new Vector3(-128f, 1.25f, 28f);
+            car.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+
+            var body = car.AddComponent<Rigidbody>();
+            body.mass = 950f;
+            body.useGravity = true;
+
+            CreateCarPart("Car Body", car.transform, new Vector3(0f, 0.45f, 0f), new Vector3(2.2f, 0.7f, 4.2f), new Color(0.92f, 0.12f, 0.08f));
+            CreateCarPart("Car Cabin", car.transform, new Vector3(0f, 1.0f, -0.28f), new Vector3(1.7f, 0.8f, 1.8f), new Color(0.12f, 0.18f, 0.22f));
+            CreateCarPart("Car Hood Highlight", car.transform, new Vector3(0f, 0.84f, 1.28f), new Vector3(1.8f, 0.08f, 1.2f), new Color(0.98f, 0.26f, 0.18f));
+            CreateCarWheel("Front Left Wheel", car.transform, new Vector3(-1.2f, 0.18f, 1.35f));
+            CreateCarWheel("Front Right Wheel", car.transform, new Vector3(1.2f, 0.18f, 1.35f));
+            CreateCarWheel("Rear Left Wheel", car.transform, new Vector3(-1.2f, 0.18f, -1.35f));
+            CreateCarWheel("Rear Right Wheel", car.transform, new Vector3(1.2f, 0.18f, -1.35f));
+
+            var controller = car.AddComponent<ArcadeCarController>();
+            controller.acceptsInput = false;
+            return car;
+        }
+
+        private static void CreateVehicleSwitcher(GameObject aircraft, GameObject car, ChaseCameraRig cameraRig)
+        {
+            var switcherObject = new GameObject("Player Vehicle Switcher");
+            var switcher = switcherObject.AddComponent<PlayerVehicleSwitcher>();
+            switcher.aircraft = aircraft.GetComponent<ArcadeAircraftController>();
+            switcher.car = car.GetComponent<ArcadeCarController>();
+            switcher.cameraRig = cameraRig;
+            switcher.startInAircraft = true;
+        }
+
+        private static void CreateCarPart(string name, Transform parent, Vector3 localPosition, Vector3 localScale, Color color)
+        {
+            GameObject part = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            part.name = name;
+            part.transform.SetParent(parent);
+            part.transform.localPosition = localPosition;
+            part.transform.localRotation = Quaternion.identity;
+            part.transform.localScale = localScale;
+            part.GetComponent<Renderer>().sharedMaterial = MakeAtlasMaterial(name + "_Mat", color, WorldAtlasTile.Building);
+        }
+
+        private static void CreateCarWheel(string name, Transform parent, Vector3 localPosition)
+        {
+            GameObject wheel = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            wheel.name = name;
+            wheel.transform.SetParent(parent);
+            wheel.transform.localPosition = localPosition;
+            wheel.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+            wheel.transform.localScale = new Vector3(0.42f, 0.22f, 0.42f);
+            wheel.GetComponent<Renderer>().sharedMaterial = MakeMaterial(name + "_Mat", new Color(0.05f, 0.05f, 0.05f));
         }
 
         private static FlightHud CreateHud(GameObject aircraft)

@@ -26,9 +26,12 @@ namespace MINgo.Flight
         public float speedDrag = 0.012f;
         public float inducedDrag = 0.04f;
         public float airbrakeDrag = 0.01f;
+        public float idleCoastDrag = 0.006f;
         public float groundBrake = 16f;
         public float takeoffSpeed = 22f;
         public float throttleChangeRate = 3.2f;
+        public float neutralThrottleReleaseRate = 1.4f;
+        public bool acceptsInput = true;
 
         private Rigidbody body;
         private bool hasGroundContact = true;
@@ -53,11 +56,14 @@ namespace MINgo.Flight
 
         private void FixedUpdate()
         {
-            FlightInputSnapshot input = FlightInputReader.ReadKeyboard();
+            FlightInputSnapshot input = acceptsInput
+                ? FlightInputReader.ReadKeyboard()
+                : new FlightInputSnapshot(0f, 0f, 0f, 0f, false);
             Throttle01 = UpdateThrottleForGtaHold(
                 Throttle01,
                 input.ThrottleDelta,
                 throttleChangeRate,
+                neutralThrottleReleaseRate,
                 Time.fixedDeltaTime);
 
             if (CurrentState == AircraftState.Crashed || CurrentState == AircraftState.Submerged)
@@ -92,6 +98,7 @@ namespace MINgo.Flight
 
             body.AddForce(liftForce, ForceMode.Force);
             body.AddForce(FlightAerodynamics.CalculateDragForce(velocity, speedDrag, inducedDrag, LiftCoefficient), ForceMode.Force);
+            body.AddForce(CalculateIdleCoastDrag(velocity, input.ThrottleDelta, hasGroundContact, idleCoastDrag), ForceMode.Force);
             if (input.ThrottleDelta < -0.05f && !hasGroundContact && velocity.sqrMagnitude > 1f)
             {
                 body.AddForce(-velocity.normalized * (velocity.sqrMagnitude * airbrakeDrag), ForceMode.Force);
@@ -175,6 +182,7 @@ namespace MINgo.Flight
             float currentThrottle,
             float throttleInput,
             float responseRate,
+            float neutralReleaseRate,
             float deltaTime)
         {
             if (throttleInput > 0.05f)
@@ -187,7 +195,21 @@ namespace MINgo.Flight
                 return Mathf.MoveTowards(currentThrottle, 0f, responseRate * deltaTime);
             }
 
-            return Mathf.Clamp01(currentThrottle);
+            return Mathf.MoveTowards(currentThrottle, 0f, neutralReleaseRate * deltaTime);
+        }
+
+        public static Vector3 CalculateIdleCoastDrag(
+            Vector3 velocity,
+            float throttleInput,
+            bool isGrounded,
+            float dragFactor)
+        {
+            if (isGrounded || throttleInput > 0.05f || velocity.sqrMagnitude <= 1f || dragFactor <= 0f)
+            {
+                return Vector3.zero;
+            }
+
+            return -velocity.normalized * (velocity.sqrMagnitude * dragFactor);
         }
 
         private void OnCollisionStay(Collision collision)

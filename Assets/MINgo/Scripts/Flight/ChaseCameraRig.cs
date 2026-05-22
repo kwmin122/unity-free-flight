@@ -79,6 +79,16 @@ namespace MINgo.Flight
             }
         }
 
+        public void SetTarget(Transform newTarget, bool snap)
+        {
+            target = newTarget;
+            if (snap)
+            {
+                hasSnapped = false;
+                velocity = Vector3.zero;
+            }
+        }
+
         public static Vector3 CalculateChaseForward(Vector3 aircraftForward, Vector3 velocity, float pitchFollow)
         {
             Vector3 sourceForward = velocity.magnitude > 3f ? velocity.normalized : aircraftForward.normalized;

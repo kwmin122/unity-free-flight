@@ -104,7 +104,7 @@ namespace MINgo.UI
 
         public static string FormatControlHint()
         {
-            return "Hold W power  Hold S slow/idle  A/D turn  Up/Down pitch  Space brake";
+            return "W power  Release W glide/slow  S brake  A/D turn  Up/Down pitch  Space hard brake  F car/plane";
         }
 
         private void UpdateWarningText()

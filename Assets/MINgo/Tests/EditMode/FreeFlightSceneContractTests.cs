@@ -16,6 +16,7 @@ namespace MINgo.Tests
     {
         private const string ScenePath = "Assets/Scenes/FreeFlightSandbox.unity";
         private const string WorldAtlasPath = "Assets/MINgo/Art/Textures/world-material-atlas-v1.png";
+        private const string SeoulAtlasPath = "Assets/MINgo/Art/Textures/seoul-generated-material-atlas-v1.png";
         private const string WorldMapConceptPath = "Assets/MINgo/Art/Concepts/world-map-concept-v1.png";
         private const string CarReferencePath = "Assets/MINgo/Art/Concepts/car-reference-sheet-v1.png";
 
@@ -260,6 +261,78 @@ namespace MINgo.Tests
         }
 
         [Test]
+        public void SceneUsesExpandedSeoulMapScale()
+        {
+            GameObject ground = GameObject.Find("Flight Reference Ground");
+            Camera camera = Camera.main;
+
+            Assert.That(ground, Is.Not.Null);
+            Assert.That(ground.transform.localScale.x, Is.GreaterThanOrEqualTo(4200f));
+            Assert.That(ground.transform.localScale.z, Is.GreaterThanOrEqualTo(4200f));
+            Assert.That(camera, Is.Not.Null);
+            Assert.That(camera.farClipPlane, Is.GreaterThanOrEqualTo(5200f));
+            Assert.That(GameObject.Find("Seoul Map West Boundary Landmark"), Is.Not.Null);
+            Assert.That(GameObject.Find("Seoul Map East Boundary Landmark"), Is.Not.Null);
+        }
+
+        [Test]
+        public void SeoulHangangCorridorSpansExpandedMap()
+        {
+            GameObject west = GameObject.Find("Hangang River West");
+            GameObject east = GameObject.Find("Hangang River East");
+
+            Assert.That(west, Is.Not.Null);
+            Assert.That(east, Is.Not.Null);
+
+            float minX = Mathf.Min(
+                west.transform.position.x - west.transform.localScale.x * 0.5f,
+                east.transform.position.x - east.transform.localScale.x * 0.5f);
+            float maxX = Mathf.Max(
+                west.transform.position.x + west.transform.localScale.x * 0.5f,
+                east.transform.position.x + east.transform.localScale.x * 0.5f);
+
+            Assert.That(maxX - minX, Is.GreaterThanOrEqualTo(2600f));
+            AssertRoadSurface("Seoul West Riverside Expressway");
+            AssertRoadSurface("Seoul East Riverside Expressway");
+        }
+
+        [Test]
+        public void ProjectContainsGeneratedSeoulMaterialAtlas()
+        {
+            Texture2D atlas = AssetDatabase.LoadAssetAtPath<Texture2D>(SeoulAtlasPath);
+
+            Assert.That(atlas, Is.Not.Null);
+            Assert.That(atlas.width, Is.GreaterThanOrEqualTo(1024));
+            Assert.That(atlas.height, Is.GreaterThanOrEqualTo(1024));
+        }
+
+        [Test]
+        public void SeoulBuildingsUseDistinctRoofAndSideMaterials()
+        {
+            Texture2D atlas = AssetDatabase.LoadAssetAtPath<Texture2D>(SeoulAtlasPath);
+
+            Assert.That(atlas, Is.Not.Null);
+            AssertRoofAndFacadeMaterials("Seoul Gangnam Glass Office 0", atlas);
+            AssertRoofAndFacadeMaterials("Seoul Yeouido IFC Tower 0", atlas);
+            AssertRoofAndFacadeMaterials("Seoul Jamsil Apartment Cluster 0", atlas);
+            AssertRoofAndFacadeMaterials("Seoul Map East Boundary Landmark", atlas);
+        }
+
+        [Test]
+        public void SceneContainsSeoulDensityForFlightTravel()
+        {
+            string[] objectNames = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
+                .Select(transform => transform.name)
+                .ToArray();
+
+            Assert.That(objectNames.Count(name => name.StartsWith("Seoul")), Is.GreaterThanOrEqualTo(220));
+            Assert.That(objectNames.Count(name => name.Contains("Gangnam")), Is.GreaterThanOrEqualTo(70));
+            Assert.That(objectNames.Count(name => name.Contains("Yeouido")), Is.GreaterThanOrEqualTo(30));
+            Assert.That(objectNames.Count(name => name.Contains("Jamsil")), Is.GreaterThanOrEqualTo(35));
+            Assert.That(objectNames.Count(name => name.Contains("Jongno")), Is.GreaterThanOrEqualTo(25));
+        }
+
+        [Test]
         public void RoadAndRunwayPaintDoesNotBlockVehicles()
         {
             AssertVisualOnlyWorldMarking("Airport Parking Stall 0");
@@ -341,6 +414,28 @@ namespace MINgo.Tests
                 ? material.GetTexture("_BaseMap")
                 : material.mainTexture;
             Assert.That(texture, Is.SameAs(atlas), objectName);
+        }
+
+        private static void AssertRoofAndFacadeMaterials(string objectName, Texture2D atlas)
+        {
+            GameObject sceneObject = GameObject.Find(objectName);
+            Assert.That(sceneObject, Is.Not.Null, objectName);
+
+            Renderer renderer = sceneObject.GetComponent<Renderer>();
+            Assert.That(renderer, Is.Not.Null, objectName);
+            Assert.That(renderer.sharedMaterials, Has.Length.GreaterThanOrEqualTo(2), objectName);
+            Assert.That(renderer.sharedMaterials[0], Is.Not.Null, objectName + " side material");
+            Assert.That(renderer.sharedMaterials[1], Is.Not.Null, objectName + " roof material");
+            Assert.That(renderer.sharedMaterials[0], Is.Not.SameAs(renderer.sharedMaterials[1]), objectName);
+            Assert.That(GetMaterialTexture(renderer.sharedMaterials[0]), Is.SameAs(atlas), objectName + " side atlas");
+            Assert.That(GetMaterialTexture(renderer.sharedMaterials[1]), Is.SameAs(atlas), objectName + " roof atlas");
+        }
+
+        private static Texture GetMaterialTexture(Material material)
+        {
+            return material.HasProperty("_BaseMap")
+                ? material.GetTexture("_BaseMap")
+                : material.mainTexture;
         }
 
         private static void AssertVisualOnlyPart(Transform aircraft, string childName)
